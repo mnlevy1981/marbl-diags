@@ -23,7 +23,7 @@ class BaseDataSource(object): # pylint: disable=useless-object-inheritance
 class CachedData(BaseDataSource):
     """ Class built around reading previously-cached data """
     def __init__(self, data_root, data_type):
-        super().__init__()
+        super(CachedData, self).__init__()
         self.logger = logging.getLogger('CachedData')
         self._get_dataset(data_root, data_type)
 
@@ -35,7 +35,7 @@ class CachedData(BaseDataSource):
 class CESMData(BaseDataSource):
     """ Class built around reading CESM history files """
     def __init__(self, **kwargs):
-        super().__init__()
+        super(CESMData, self).__init__()
         self.logger = logging.getLogger('CESMData')
         self._get_dataset(**kwargs)
 
@@ -111,7 +111,7 @@ class CESMData(BaseDataSource):
 class WOA2013Data(BaseDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, **kwargs):
-        super().__init__()
+        super(WOA2013Data, self).__init__()
         self.woa_names = {'T':'t', 'S':'s', 'NO3':'n', 'O2':'o', 'O2sat':'O', 'AOU':'A', 'SiO3':'i', 'PO4':'p'}
         self.logger = logging.getLogger('WOA2013Data')
         self._get_dataset(**kwargs)
@@ -131,10 +131,10 @@ class WOA2013Data(BaseDataSource):
             self._list_files(varname=varname, freq=freq, grid=grid)
             dsi = xr.open_mfdataset(self._files, decode_times=False)
 
-            if f'{v}_an' in dsi.variables and varname != f'{v}_an':
+            if '{}_an'.format(v) in dsi.variables and varname != '{}_an'.format(v):
                 dsi.rename({'{}_an'.format(v):varname}, inplace=True)
 
-            dsi = dsi.drop([k for k in dsi.variables if f'{v}_' in k])
+            dsi = dsi.drop([k for k in dsi.variables if '{}_'.format(v) in k])
 
             if varname in ['O2', 'AOU', 'O2sat']:
                 dsi[varname] = dsi[varname] * mlperl_2_mmolm3
