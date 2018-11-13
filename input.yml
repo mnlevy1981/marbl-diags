@@ -1,0 +1,40 @@
+WOA2013-comparison:
+  short_name: 'nutrients'
+  description: Some text here
+  dirout: '/glade/scratch/mlevy/marbl-diag-out.new'
+  source: ocean_diagnostics
+  grid: POP_gx1v7 # grid on which to conduct the analysis
+  operations:
+    - plot_state
+  variable_list:
+    - NO3
+    - PO4
+  depth_list:
+    - [200., 600.]
+    - 0.
+    - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
+  data_sources:
+    g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002:
+      role: model_case
+      source: cesm
+      open_dataset:
+        filetype: hist
+        dirin: '/glade/scratch/mclong/archive/g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002/ocn/hist'
+        case: g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002
+        stream: pop.h
+        datestr: '????-??'
+        variable_list:
+          - NO3
+          - PO4
+      operations:
+        - compute_mon_climatology # applied successively
+    WOA2013:
+      role: reference
+      source: woa2013
+      open_dataset:
+        varname_list:
+          - NO3
+          - PO4
+        freq: mon
+        grid: POP_gx1v7
+      operations:
