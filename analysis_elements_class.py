@@ -19,12 +19,13 @@ class AnalysisElements(object): # pylint: disable=useless-object-inheritance,too
         """ construct class object based on config_file_in (YAML format) """
         # Read YAML configuration
         with open(config_file_in) as file_in:
-            configuration = yaml.load(file_in)
+            self._configuration = yaml.load(file_in)
         self.logger = logging.getLogger('AnalysisElements')
-        self._check(configuration)
-        self._open_datasets(configuration)
+        self._check()
+        self._open_datasets()
+        self._operate_on_datasets()
 
-    def _check(self, configuration):
+    def _check(self):
         """
         Configuration file must be laid out as follows.
         analysis_element:
@@ -46,9 +47,9 @@ class AnalysisElements(object): # pylint: disable=useless-object-inheritance,too
         data_sources: stores attributes of the collection, specified in the yaml
                       file.
         """
-        if not configuration:
+        if not self._configuration:
             raise ValueError("configuration dictionary is empty")
-        for config_key, config_dict in configuration.items():
+        for config_key, config_dict in self._configuration.items():
             self.logger.info("Checking contents of %s", config_key)
             # Check for required fields in top level analysis element
             for expected_key in ['dirout', 'source', 'data_sources', 'operations']:
@@ -63,22 +64,22 @@ class AnalysisElements(object): # pylint: disable=useless-object-inheritance,too
                                        (expected_key, data_source))
             self.logger.info("Contents of %s contain all necessary data", config_key)
 
-    def _open_datasets(self, configuration):
+    def _open_datasets(self):
         """ Open requested datasets """
         self.collection = dict()
-        for config_key, config_dict in configuration.items():
+        for config_key, config_dict in self._configuration.items():
             self.collection[config_key] = dict()
             for data_source in config_dict['data_sources']:
                 self.logger.info("Creating data object for %s in %s", data_source, config_key)
-                possible_tmp_location = "{}/work/{}.{}.{}".format(
-                    configuration[config_key]['dirout'],
+                cached_location = "{}/work/{}.{}.{}".format(
+                    self._configuration[config_key]['dirout'],
                     config_key,
                     data_source,
                     'zarr')
-                if os.path.exists(possible_tmp_location):
-                    self.logger.info('Opening %s', possible_tmp_location)
+                if os.path.exists(cached_location):
+                    self.logger.info('Opening %s', cached_location)
                     self.collection[config_key][data_source] = data_source_classes.CachedData(
-                        data_root=possible_tmp_location, data_type='zarr')
+                        data_root=cached_location, data_type='zarr')
                 else:
                     self.logger.info('Opening %s',
                                      config_dict['data_sources'][data_source]['source'])
@@ -92,3 +93,27 @@ class AnalysisElements(object): # pylint: disable=useless-object-inheritance,too
                         raise ValueError("Unknown source '%s'" %
                                          config_dict['data_sources'][data_source]['source'])
                 self.logger.info('ds = %s', self.collection[config_key][data_source].ds)
+
+    def _operate_on_datasets(self):
+        """ perform requested operations on datasets """
+        for config_key, config_dict in self._configuration.items():
+            for data_source in config_dict['data_sources']:
+                if isinstance(self.collection[config_key][data_source],
+                              data_source_classes.CachedData):
+                    self.logger.info('No operations for %s, data was cached', data_source)
+                    continue
+                if not config_dict['data_sources'][data_source]['operations']:
+                    self.logger.info('No operations requested for %s', data_source)
+                    continue
+                for op in config_dict['data_sources'][data_source]['operations']:
+                    self.logger.info('Computing %s', op)
+                    func = getattr(self.collection[config_key][data_source], op)
+                    func()
+                    self.logger.info('ds = %s', self.collection[config_key][data_source].ds)
+                    # write to cache
+                    cached_location = "{}/work/{}.{}.{}".format(
+                        self._configuration[config_key]['dirout'],
+                        config_key,
+                        data_source,
+                        'zarr')
+                    self.collection[config_key][data_source].cache_dataset(cached_location)
