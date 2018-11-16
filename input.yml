@@ -1,7 +1,7 @@
 WOA2013-comparison:
   short_name: 'nutrients'
   description: Some text here
-  dirout: '/glade/scratch/mlevy/marbl-diag-out.new'
+  dirout: '/glade/scratch/mlevy/marbl-diag-out'
   source: ocean_diagnostics
   grid: POP_gx1v7 # grid on which to conduct the analysis
   operations:

@@ -10,9 +10,11 @@ import xarray as xr
 
 class BaseDataSource(object): # pylint: disable=useless-object-inheritance
     """ Class containing functions used regardless of data source """
-    def __init__(self, **kwargs): # pylint: disable=unused-argument
+    def __init__(self, **kwargs):
         self.logger = None
         self._files = None
+        self.role = kwargs['role']
+        self.source = kwargs['source']
         self.ds = None # pylint: disable=invalid-name
 
     ###################
@@ -96,14 +98,6 @@ class BaseDataSource(object): # pylint: disable=useless-object-inheritance
         else:
             raise ValueError('Unknown output file extension: {ext}')
 
-    def gen_plots(self):
-        """ Regardless of data source, generate png """
-        pass
-
-    def gen_html(self):
-        """ Regardless of data source, generate html """
-        pass
-
     ####################
     # PRIVATE ROUTINES #
     ####################
@@ -122,8 +116,8 @@ class BaseDataSource(object): # pylint: disable=useless-object-inheritance
 
 class CachedData(BaseDataSource):
     """ Class built around reading previously-cached data """
-    def __init__(self, data_root, data_type):
-        super(CachedData, self).__init__()
+    def __init__(self, data_root, data_type, **kwargs):
+        super(CachedData, self).__init__(**kwargs)
         self.logger = logging.getLogger('CachedData')
         self._get_dataset(data_root, data_type)
 
@@ -135,9 +129,9 @@ class CachedData(BaseDataSource):
 class CESMData(BaseDataSource):
     """ Class built around reading CESM history files """
     def __init__(self, **kwargs):
-        super(CESMData, self).__init__()
+        super(CESMData, self).__init__(**kwargs)
         self.logger = logging.getLogger('CESMData')
-        self._get_dataset(**kwargs)
+        self._get_dataset(**kwargs['open_dataset'])
 
     def _get_dataset(self, filetype, dirin, case, stream, datestr, variable_list):
         """ docstring """
@@ -211,11 +205,11 @@ class CESMData(BaseDataSource):
 class WOA2013Data(BaseDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, **kwargs):
-        super(WOA2013Data, self).__init__()
+        super(WOA2013Data, self).__init__(**kwargs)
         self.woa_names = {'T':'t', 'S':'s', 'NO3':'n', 'O2':'o', 'O2sat':'O', 'AOU':'A',
                           'SiO3':'i', 'PO4':'p'}
         self.logger = logging.getLogger('WOA2013Data')
-        self._get_dataset(**kwargs)
+        self._get_dataset(**kwargs['open_dataset'])
 
     def _get_dataset(self, varname_list, freq='ann', grid='1x1d'):
         """ docstring """
