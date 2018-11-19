@@ -13,7 +13,7 @@ WOA2013-comparison:
     - [200., 600.]
     - 0.
     - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
-  data_sources:
+  collections:
     g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002:
       role: model_case
       source: cesm

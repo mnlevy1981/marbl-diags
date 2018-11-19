@@ -127,6 +127,7 @@ class GenericAnalysisElement(object):
         self.logger = logging.getLogger(config_key)
         self._config_key = config_key
         self._config_dict = config_dict
+        self.collections = None
         self._check()
         self._open_datasets()
 
@@ -141,10 +142,10 @@ class GenericAnalysisElement(object):
           description: {{ description_text }}
           dirout: {{ path_to_save_temp_files }}
           source: {{ module_for_compute }}
-          operations: {{ List of methods of form: ? = func(collection,data_sources)}}
+          operations: {{ List of methods of form: ? = func(collection,collections)}}
           variable_list: {{ list of variables to include in analysis (might be derived) }}
-          data_sources:
-            data_source:
+          collections:
+            collection:
               role:
               source:
               open_dataset:
@@ -153,7 +154,7 @@ class GenericAnalysisElement(object):
 
 
         collection: is a collection of datasets;
-        data_sources: stores attributes of the collection, specified in the yaml
+        collections: stores attributes of the collection, specified in the yaml
                       file.
         """
         if not self._config_dict:
@@ -161,16 +162,16 @@ class GenericAnalysisElement(object):
 
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element
-        for expected_key in ['dirout', 'source', 'data_sources', 'operations']:
+        for expected_key in ['dirout', 'source', 'collections', 'operations']:
             if  expected_key not in self._config_dict:
                 raise KeyError("Can not find '%s' in '%s' section of configuration" %
                                (expected_key, self._config_key))
-        # Check for required fields in data_sources
-        for data_source in self._config_dict['data_sources']:
+        # Check for required fields in collections
+        for collection in self._config_dict['collections']:
             for expected_key in ['source', 'open_dataset', 'operations']:
-                if expected_key not in self._config_dict['data_sources'][data_source]:
-                    raise KeyError("Can not find '%s' in '%s' section of data_sources" %
-                                   (expected_key, data_source))
+                if expected_key not in self._config_dict['collections'][collection]:
+                    raise KeyError("Can not find '%s' in '%s' section of collections" %
+                                   (expected_key, collection))
         self.logger.info("Contents of %s contain all necessary data", self._config_key)
 
     def _open_datasets(self):

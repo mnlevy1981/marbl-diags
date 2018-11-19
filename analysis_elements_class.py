@@ -9,7 +9,7 @@ import cartopy
 import cartopy.crs as ccrs
 import numpy as np
 import matplotlib.pyplot as plt
-import data_source_classes
+import collection_classes
 import plottools as pt
 from generic_classes import GenericAnalysisElement
 
@@ -21,56 +21,56 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
 
     def _open_datasets(self):
         """ Open requested datasets """
-        self.collection = dict()
-        for data_source in self._config_dict['data_sources']:
-            self.logger.info("Creating data object for %s in %s", data_source, self._config_key)
+        self.collections = dict()
+        for collection in self._config_dict['collections']:
+            self.logger.info("Creating data object for %s in %s", collection, self._config_key)
             cached_location = "{}/work/{}.{}.{}".format(
                 self._config_dict['dirout'],
                 self._config_key,
-                data_source,
+                collection,
                 'zarr')
             if os.path.exists(cached_location):
                 self.logger.info('Opening %s', cached_location)
-                self.collection[data_source] = data_source_classes.CachedData(
+                self.collections[collection] = collection_classes.CachedData(
                     data_root=cached_location, data_type='zarr',
-                    **self._config_dict['data_sources'][data_source])
+                    **self._config_dict['collections'][collection])
             else:
                 self.logger.info('Opening %s',
-                                 self._config_dict['data_sources'][data_source]['source'])
-                if self._config_dict['data_sources'][data_source]['source'] == 'cesm':
-                    self.collection[data_source] = data_source_classes.CESMData(
-                        **self._config_dict['data_sources'][data_source])
-                elif self._config_dict['data_sources'][data_source]['source'] == 'woa2013':
-                    self.collection[data_source] = data_source_classes.WOA2013Data(
-                        **self._config_dict['data_sources'][data_source])
+                                 self._config_dict['collections'][collection]['source'])
+                if self._config_dict['collections'][collection]['source'] == 'cesm':
+                    self.collections[collection] = collection_classes.CESMData(
+                        **self._config_dict['collections'][collection])
+                elif self._config_dict['collections'][collection]['source'] == 'woa2013':
+                    self.collections[collection] = collection_classes.WOA2013Data(
+                        **self._config_dict['collections'][collection])
                 else:
                     raise ValueError("Unknown source '%s'" %
-                                     self._config_dict['data_sources'][data_source]['source'])
-            self.logger.info('ds = %s', self.collection[data_source].ds)
+                                     self._config_dict['collections'][collection]['source'])
+            self.logger.info('ds = %s', self.collections[collection].ds)
         self._operate_on_datasets()
 
     def _operate_on_datasets(self):
         """ perform requested operations on datasets """
-        for data_source in self._config_dict['data_sources']:
-            if isinstance(self.collection[data_source],
-                          data_source_classes.CachedData):
-                self.logger.info('No operations for %s, data was cached', data_source)
+        for collection in self._config_dict['collections']:
+            if isinstance(self.collections[collection],
+                          collection_classes.CachedData):
+                self.logger.info('No operations for %s, data was cached', collection)
                 continue
-            if not self._config_dict['data_sources'][data_source]['operations']:
-                self.logger.info('No operations requested for %s', data_source)
+            if not self._config_dict['collections'][collection]['operations']:
+                self.logger.info('No operations requested for %s', collection)
                 continue
-            for op in self._config_dict['data_sources'][data_source]['operations']:
+            for op in self._config_dict['collections'][collection]['operations']:
                 self.logger.info('Computing %s', op)
-                func = getattr(self.collection[data_source], op)
+                func = getattr(self.collections[collection], op)
                 func()
-                self.logger.info('ds = %s', self.collection[data_source].ds)
+                self.logger.info('ds = %s', self.collections[collection].ds)
                 # write to cache
                 cached_location = "{}/work/{}.{}.{}".format(
                     self._config_dict['dirout'],
                     self._config_key,
-                    data_source,
+                    collection,
                     'zarr')
-                self.collection[data_source].cache_dataset(cached_location)
+                self.collections[collection].cache_dataset(cached_location)
 
     ###################
     # PUBLIC ROUTINES #
@@ -81,9 +81,9 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         for op in self._config_dict['operations']:
             self.logger.info('Calling %s for %s', op, self._config_key)
             func = getattr(self, op)
-            func(self.collection, **self._config_dict)
+            func(**self._config_dict)
 
-    def plot_state(self, collections, **kwargs):
+    def plot_state(self, **kwargs):
         """ Regardless of data source, generate png """
         contour_specs = {'O2' : {'levels' : np.concatenate((np.arange(0,5,1),np.arange(5,10,2),np.arange(10,30,5),np.arange(30,70,10),np.arange(80,150,20),np.arange(150,325,25))),
                                  'norm' : pt.MidPointNorm(midpoint=50.),
@@ -112,13 +112,13 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         if not os.path.exists(dirout):
             call(['mkdir', '-p', dirout])
 
-        nrow, ncol = pt.get_plot_dims(len(collections))
+        nrow, ncol = pt.get_plot_dims(len(self.collections))
         self.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
-                         nrow, ncol, len(collections))
+                         nrow, ncol, len(self.collections))
 
         # identify reference (if any provided)
         ref_cname = None
-        for cname, collection in collections.items():
+        for cname, collection in self.collections.items():
             if collection.role == 'reference':
                 if ref_cname:
                     raise ValueError('More that one reference dataset specified')
@@ -151,12 +151,12 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 fig = plt.figure(figsize=(ncol*6,nrow*4))
 
                 #-- loop over datasets
-                cname_list = collections.keys()
+                cname_list = self.collections.keys()
                 if ref_cname:
                     cname_list = [ref_cname] + [cname for cname in cname_list if cname != ref_cname]
                 for i, ds_name in enumerate(cname_list):
 
-                    ds = collections[ds_name].ds
+                    ds = self.collections[ds_name].ds
                     self.logger.info('Plotting %s', ds_name)
 
                     #-- need to deal with time dimension here....
