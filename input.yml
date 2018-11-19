@@ -21,6 +21,7 @@ WOA2013-comparison:
         filetype: climo
         dirin: '/glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo'
         case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
+        stream: mavg
         datestr: 0317-0326
         variable_list:
           - NO3

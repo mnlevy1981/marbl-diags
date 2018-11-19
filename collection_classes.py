@@ -25,7 +25,7 @@ class CESMData(GenericCollection):
         self.logger = logging.getLogger('CESMData')
         self._get_dataset(**kwargs['open_dataset'])
 
-    def _get_dataset(self, filetype, dirin, case, datestr, variable_list, stream=None):
+    def _get_dataset(self, filetype, dirin, case, stream, datestr, variable_list):
         """ docstring """
         xr_open_ds = {'decode_coords' : False, 'decode_times' : False, 'data_vars' : 'minimal'}
         if isinstance(variable_list, str):
@@ -72,7 +72,7 @@ class CESMData(GenericCollection):
 
             file_name_pattern = []
             for date_str in datestr:
-                file_name_pattern.append('{}/mavg.{}.nc'.format(dirin, date_str))
+                file_name_pattern.append('{}/{}.{}.nc'.format(dirin, stream, date_str))
             self._list_files(file_name_pattern)
 
             self.logger.info('Opening %d files: ', len(self._files))
