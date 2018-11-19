@@ -14,6 +14,34 @@ WOA2013-comparison:
     - 0.
     - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
   collections:
+    b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology:
+      role: model_case
+      source: cesm
+      open_dataset:
+        filetype: climo
+        dirin: '/glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo'
+        case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
+        datestr: 0317-0326
+        variable_list:
+          - NO3
+          - PO4
+      operations:
+    b.e21.BW1850.f09_g17.CMIP6-piControl.001:
+      role: model_case
+      source: cesm
+      open_dataset:
+        filetype: hist
+        dirin: '/glade/scratch/cmip6/archive/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/hist'
+        case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
+        stream: pop.h
+        datestr:
+          - '031[7-9]-??'
+          - '032[0-6]-??'
+        variable_list:
+          - NO3
+          - PO4
+      operations:
+        - compute_mon_climatology # applied successively
     g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002:
       role: model_case
       source: cesm

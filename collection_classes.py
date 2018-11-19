@@ -1,4 +1,4 @@
-""" The DataSource class contains a data set and metadata regarding how to analyze the set """
+""" These classes build on GenericCollection to open data from specific sources """
 
 import glob
 import logging
@@ -25,15 +25,54 @@ class CESMData(GenericCollection):
         self.logger = logging.getLogger('CESMData')
         self._get_dataset(**kwargs['open_dataset'])
 
-    def _get_dataset(self, filetype, dirin, case, stream, datestr, variable_list):
+    def _get_dataset(self, filetype, dirin, case, datestr, variable_list, stream=None):
         """ docstring """
         xr_open_ds = {'decode_coords' : False, 'decode_times' : False, 'data_vars' : 'minimal'}
         if isinstance(variable_list, str):
             variable_list = [variable_list]
 
+        if isinstance(datestr, str):
+            datestr = [datestr]
+
         if filetype == 'hist':
 
-            file_name_pattern = '{}/{}.{}.{}.nc'.format(dirin, case, stream, datestr)
+            file_name_pattern = []
+            for date_str in datestr:
+                file_name_pattern.append('{}/{}.{}.{}.nc'.format(dirin, case, stream, date_str))
+            self._list_files(file_name_pattern)
+
+            self.logger.info('Opening %d files: ', len(self._files))
+            for n, file_name in enumerate(self._files): # pylint: disable=invalid-name
+                self.logger.info('%d: %s', n+1, file_name)
+
+            self.ds = xr.open_mfdataset(self._files, **xr_open_ds)
+
+            tb_name = ''
+            if 'bounds' in self.ds['time'].attrs:
+                tb_name = self.ds['time'].attrs['bounds']
+            elif 'time_bound' in self.ds:
+                tb_name = 'time_bound'
+
+            if variable_list:
+
+                static_vars = [v for v, da in self.ds.variables.items()
+                               if 'time' not in da.dims]
+                self.logger.debug('static vars: %s', static_vars)
+
+                keep_vars = ['time', tb_name]+variable_list+static_vars
+                self.logger.debug('keep vars: %s', keep_vars)
+
+                drop_vars = [v for v, da in self.ds.variables.items()
+                             if 'time' in da.dims and v not in keep_vars]
+
+                self.logger.debug('dropping vars: %s', drop_vars)
+                self.ds = self.ds.drop(drop_vars)
+
+        elif filetype == 'climo':
+
+            file_name_pattern = []
+            for date_str in datestr:
+                file_name_pattern.append('{}/mavg.{}.nc'.format(dirin, date_str))
             self._list_files(file_name_pattern)
 
             self.logger.info('Opening %d files: ', len(self._files))
@@ -70,8 +109,10 @@ class CESMData(GenericCollection):
 
             self.ds = xr.Dataset()
             for variable in variable_list:
-                file_name_pattern = '{}/{}.{}.{}.{}.nc'.format(
-                    dirin, case, stream, variable, datestr)
+                file_name_pattern = []
+                for date_str in datestr:
+                    file_name_pattern.append('{}/{}.{}.{}.{}.nc'.format(
+                        dirin, case, stream, variable, date_str))
                 self._list_files(file_name_pattern)
                 self.ds = xr.merge((self.ds, xr.open_mfdataset(self._files, **xr_open_ds)))
 
@@ -89,8 +130,10 @@ class CESMData(GenericCollection):
     def _list_files(self, glob_pattern):
         '''Glob for files and check that some were found.'''
 
-        self.logger.debug('glob file search: %s', glob_pattern)
-        self._files = sorted(glob.glob(glob_pattern))
+        self._files = []
+        for glob_pat in glob_pattern:
+            self.logger.debug('glob file search: %s', glob_pat)
+            self._files += sorted(glob.glob(glob_pat))
         if not self._files:
             raise ValueError('No files: %s' % glob_pattern)
 

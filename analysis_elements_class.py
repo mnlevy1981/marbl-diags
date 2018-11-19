@@ -1,6 +1,6 @@
 """
-The AnalysisElements class is a container for multiple datasets
-and operators for comparing them."""
+The AnalysisElements class adds source-specific methods for opening or operating
+on collections of data."""
 
 import logging
 import os

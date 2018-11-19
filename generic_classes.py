@@ -153,9 +153,8 @@ class GenericAnalysisElement(object):
                 {{ List of methods of form: ds = func(ds) }}
 
 
-        collection: is a collection of datasets;
-        collections: stores attributes of the collection, specified in the yaml
-                      file.
+        collections: is a collection of datasets;
+        collection: stores attributes of the collection, specified in the yaml file.
         """
         if not self._config_dict:
             raise ValueError("configuration dictionary is empty")
