@@ -3,118 +3,10 @@
 import glob
 import logging
 import os
-from subprocess import call
-from datetime import datetime
-import cftime
 import xarray as xr
+from generic_classes import GenericCollection
 
-class BaseDataSource(object): # pylint: disable=useless-object-inheritance
-    """ Class containing functions used regardless of data source """
-    def __init__(self, **kwargs):
-        self.logger = None
-        self._files = None
-        self.role = kwargs['role']
-        self.source = kwargs['source']
-        self.ds = None # pylint: disable=invalid-name
-
-    ###################
-    # PUBLIC ROUTINES #
-    ###################
-
-    def compute_mon_climatology(self):
-        """ Compute a monthly climatology """
-
-        tb_name, tb_dim = self._time_bound_var()
-
-        grid_vars = [v for v in self.ds.variables if 'time' not in self.ds[v].dims]
-
-        # save attrs
-        attrs = {v:self.ds[v].attrs for v in self.ds.variables}
-        encoding = {v:{key:val for key, val in self.ds[v].encoding.items()
-                       if key in ['dtype', '_FillValue', 'missing_value']}
-                    for v in self.ds.variables}
-
-        #-- compute time variable
-        date = cftime.num2date(self.ds[tb_name].mean(tb_dim),
-                               units=self.ds.time.attrs['units'],
-                               calendar=self.ds.time.attrs['calendar'])
-        self.ds.time.values = date
-        if len(date)%12 != 0:
-            raise ValueError('Time axis not evenly divisible by 12!')
-
-        #-- compute climatology
-        ds = self.ds.drop(grid_vars).groupby('time.month').mean('time').rename({'month':'time'})
-
-        #-- put grid_vars back
-        ds = xr.merge((ds, self.ds.drop([v for v in self.ds.variables if v not in grid_vars])))
-
-        attrs['time'] = {'long_name':'Month', 'units':'month'}
-        del encoding['time']
-
-        # put the attributes back
-        for v in ds.variables:
-            ds[v].attrs = attrs[v]
-
-        # put the encoding back
-        for v in ds.variables:
-            if v in encoding:
-                ds[v].encoding = encoding[v]
-
-        self.ds = ds
-
-    def cache_dataset(self, cached_location):
-        """
-        Function to write output:
-           - optionally add some file-level attrs
-           - switch method based on file extension
-        """
-
-        diro = os.path.dirname(cached_location)
-        if not os.path.exists(diro):
-            self.logger.info('creating %s', diro)
-            call(['mkdir', '-p', diro])
-
-        if os.path.exists(cached_location):
-            call(['rm', '-fr', cached_location])
-
-        dsattrs = {
-            'history': 'created by {} on {}'.format(os.environ['USER'],
-                                                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            }
-
-        # if add_attrs:
-        #     dsattrs.update(dsattrs)
-        self.ds.attrs.update(dsattrs)
-
-        ext = os.path.splitext(cached_location)[1]
-        if ext == '.nc':
-            self.logger.info('writing %s', cached_location)
-            self.ds.to_netcdf(cached_location, compute=True)
-
-        elif ext == '.zarr':
-            self.logger.info('writing %s', cached_location)
-            self.ds.to_zarr(cached_location, compute=True)
-
-        else:
-            raise ValueError('Unknown output file extension: {ext}')
-
-    ####################
-    # PRIVATE ROUTINES #
-    ####################
-
-    def _time_bound_var(self):
-        """ Determine time bound var name and dimension """
-        tb_name = ''
-        if 'bounds' in self.ds['time'].attrs:
-            tb_name = self.ds['time'].attrs['bounds']
-        elif 'time_bound' in self.ds:
-            tb_name = 'time_bound'
-        else:
-            raise ValueError('No time_bound variable found')
-        tb_dim = self.ds[tb_name].dims[1]
-        return tb_name, tb_dim
-
-class CachedData(BaseDataSource):
+class CachedData(GenericCollection):
     """ Class built around reading previously-cached data """
     def __init__(self, data_root, data_type, **kwargs):
         super(CachedData, self).__init__(**kwargs)
@@ -126,7 +18,7 @@ class CachedData(BaseDataSource):
         if data_type == 'zarr':
             self.ds = xr.open_zarr(data_root, decode_times=False, decode_coords=False) # pylint: disable=invalid-name
 
-class CESMData(BaseDataSource):
+class CESMData(GenericCollection):
     """ Class built around reading CESM history files """
     def __init__(self, **kwargs):
         super(CESMData, self).__init__(**kwargs)
@@ -202,7 +94,7 @@ class CESMData(BaseDataSource):
         if not self._files:
             raise ValueError('No files: %s' % glob_pattern)
 
-class WOA2013Data(BaseDataSource):
+class WOA2013Data(GenericCollection):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, **kwargs):
         super(WOA2013Data, self).__init__(**kwargs)

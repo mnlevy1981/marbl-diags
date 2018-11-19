@@ -5,31 +5,72 @@ and operators for comparing them."""
 import logging
 import os
 from subprocess import call
-import yaml
 import cartopy
 import cartopy.crs as ccrs
 import numpy as np
 import matplotlib.pyplot as plt
 import data_source_classes
 import plottools as pt
+from generic_classes import GenericAnalysisElement
 
-class AnalysisElements(object): # pylint: disable=useless-object-inheritance,too-few-public-methods
-    """
-    Objects in this class
-        * datasets: datasets[ds_sname] is a specific dataset to analyze
-                    E.g. datasets['WOA2013'] is the World Ocean Atlas reanalysis
-        * variables: variables[var_name] is a list of alternative names for the variable
-                     E.g. variables['nitrate'] = ['NO3', 'n_an']
-    """
-    def __init__(self, config_key, config_dict):
-        """ construct class object based on config_file_in (YAML format) """
-        # Read YAML configuration
-        self.logger = logging.getLogger(config_key)
-        self._config_key = config_key
-        self._config_dict = config_dict
-        self._check()
-        self._open_datasets()
+class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object-inheritance,too-few-public-methods
+
+    ####################
+    # PRIVATE ROUTINES #
+    ####################
+
+    def _open_datasets(self):
+        """ Open requested datasets """
+        self.collection = dict()
+        for data_source in self._config_dict['data_sources']:
+            self.logger.info("Creating data object for %s in %s", data_source, self._config_key)
+            cached_location = "{}/work/{}.{}.{}".format(
+                self._config_dict['dirout'],
+                self._config_key,
+                data_source,
+                'zarr')
+            if os.path.exists(cached_location):
+                self.logger.info('Opening %s', cached_location)
+                self.collection[data_source] = data_source_classes.CachedData(
+                    data_root=cached_location, data_type='zarr',
+                    **self._config_dict['data_sources'][data_source])
+            else:
+                self.logger.info('Opening %s',
+                                 self._config_dict['data_sources'][data_source]['source'])
+                if self._config_dict['data_sources'][data_source]['source'] == 'cesm':
+                    self.collection[data_source] = data_source_classes.CESMData(
+                        **self._config_dict['data_sources'][data_source])
+                elif self._config_dict['data_sources'][data_source]['source'] == 'woa2013':
+                    self.collection[data_source] = data_source_classes.WOA2013Data(
+                        **self._config_dict['data_sources'][data_source])
+                else:
+                    raise ValueError("Unknown source '%s'" %
+                                     self._config_dict['data_sources'][data_source]['source'])
+            self.logger.info('ds = %s', self.collection[data_source].ds)
         self._operate_on_datasets()
+
+    def _operate_on_datasets(self):
+        """ perform requested operations on datasets """
+        for data_source in self._config_dict['data_sources']:
+            if isinstance(self.collection[data_source],
+                          data_source_classes.CachedData):
+                self.logger.info('No operations for %s, data was cached', data_source)
+                continue
+            if not self._config_dict['data_sources'][data_source]['operations']:
+                self.logger.info('No operations requested for %s', data_source)
+                continue
+            for op in self._config_dict['data_sources'][data_source]['operations']:
+                self.logger.info('Computing %s', op)
+                func = getattr(self.collection[data_source], op)
+                func()
+                self.logger.info('ds = %s', self.collection[data_source].ds)
+                # write to cache
+                cached_location = "{}/work/{}.{}.{}".format(
+                    self._config_dict['dirout'],
+                    self._config_key,
+                    data_source,
+                    'zarr')
+                self.collection[data_source].cache_dataset(cached_location)
 
     ###################
     # PUBLIC ROUTINES #
@@ -148,98 +189,3 @@ class AnalysisElements(object): # pylint: disable=useless-object-inheritance,too
 
                 fig.savefig(plot_name, bbox_inches='tight', dpi=300)
                 plt.close(fig)
-
-    ####################
-    # PRIVATE ROUTINES #
-    ####################
-
-    def _check(self):
-        """
-        Configuration file must be laid out as follows.
-        analysis_element:
-          description: {{ description_text }}
-          dirout: {{ path_to_save_temp_files }}
-          source: {{ module_for_compute }}
-          operations: {{ List of methods of form: ? = func(collection,data_sources)}}
-          variable_list: {{ list of variables to include in analysis (might be derived) }}
-          data_sources:
-            data_source:
-              role:
-              source:
-              open_dataset:
-              operations:
-                {{ List of methods of form: ds = func(ds) }}
-
-
-        collection: is a collection of datasets;
-        data_sources: stores attributes of the collection, specified in the yaml
-                      file.
-        """
-        if not self._config_dict:
-            raise ValueError("configuration dictionary is empty")
-
-        self.logger.info("Checking contents of %s", self._config_key)
-        # Check for required fields in top level analysis element
-        for expected_key in ['dirout', 'source', 'data_sources', 'operations']:
-            if  expected_key not in self._config_dict:
-                raise KeyError("Can not find '%s' in '%s' section of configuration" %
-                               (expected_key, self._config_key))
-        # Check for required fields in data_sources
-        for data_source in self._config_dict['data_sources']:
-            for expected_key in ['source', 'open_dataset', 'operations']:
-                if expected_key not in self._config_dict['data_sources'][data_source]:
-                    raise KeyError("Can not find '%s' in '%s' section of data_sources" %
-                                   (expected_key, data_source))
-        self.logger.info("Contents of %s contain all necessary data", self._config_key)
-
-    def _open_datasets(self):
-        """ Open requested datasets """
-        self.collection = dict()
-        for data_source in self._config_dict['data_sources']:
-            self.logger.info("Creating data object for %s in %s", data_source, self._config_key)
-            cached_location = "{}/work/{}.{}.{}".format(
-                self._config_dict['dirout'],
-                self._config_key,
-                data_source,
-                'zarr')
-            if os.path.exists(cached_location):
-                self.logger.info('Opening %s', cached_location)
-                self.collection[data_source] = data_source_classes.CachedData(
-                    data_root=cached_location, data_type='zarr',
-                    **self._config_dict['data_sources'][data_source])
-            else:
-                self.logger.info('Opening %s',
-                                 self._config_dict['data_sources'][data_source]['source'])
-                if self._config_dict['data_sources'][data_source]['source'] == 'cesm':
-                    self.collection[data_source] = data_source_classes.CESMData(
-                        **self._config_dict['data_sources'][data_source])
-                elif self._config_dict['data_sources'][data_source]['source'] == 'woa2013':
-                    self.collection[data_source] = data_source_classes.WOA2013Data(
-                        **self._config_dict['data_sources'][data_source])
-                else:
-                    raise ValueError("Unknown source '%s'" %
-                                     self._config_dict['data_sources'][data_source]['source'])
-            self.logger.info('ds = %s', self.collection[data_source].ds)
-
-    def _operate_on_datasets(self):
-        """ perform requested operations on datasets """
-        for data_source in self._config_dict['data_sources']:
-            if isinstance(self.collection[data_source],
-                          data_source_classes.CachedData):
-                self.logger.info('No operations for %s, data was cached', data_source)
-                continue
-            if not self._config_dict['data_sources'][data_source]['operations']:
-                self.logger.info('No operations requested for %s', data_source)
-                continue
-            for op in self._config_dict['data_sources'][data_source]['operations']:
-                self.logger.info('Computing %s', op)
-                func = getattr(self.collection[data_source], op)
-                func()
-                self.logger.info('ds = %s', self.collection[data_source].ds)
-                # write to cache
-                cached_location = "{}/work/{}.{}.{}".format(
-                    self._config_dict['dirout'],
-                    self._config_key,
-                    data_source,
-                    'zarr')
-                self.collection[data_source].cache_dataset(cached_location)
