@@ -88,12 +88,6 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         contour_specs = {'O2' : {'levels' : np.concatenate((np.arange(0,5,1),np.arange(5,10,2),np.arange(10,30,5),np.arange(30,70,10),np.arange(80,150,20),np.arange(150,325,25))),
                                  'norm' : pt.MidPointNorm(midpoint=50.),
                                  'extend' : 'max','cmap':'PuOr'},
-                         'NO3' : {'levels' : [0,0.1,0.2,0.3,0.4,0.6,0.8,1.,1.5,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,34,38,42],
-                                  'norm' : pt.MidPointNorm(midpoint=2.),
-                                  'extend' : 'max','cmap':'PRGn'},
-                         'PO4' : {'levels' : [0,0.01,0.02,0.04,0.06,0.08,0.1,0.14,0.18,0.22,0.26,0.3,0.34,0.38,0.42,0.46,0.5,0.6,0.7,0.8,0.9,1,1.2,1.4,1.6,1.8,2,2.4,2.8,3.2],
-                                  'norm' : pt.MidPointNorm(midpoint=0.8),
-                                  'extend' : 'max','cmap':'PRGn'},
                          'SiO3' : {'levels' : np.concatenate((np.arange(0,10,1),np.arange(10,50,5),np.arange(50,100,10),np.arange(100,200,20))),
                                    'norm' : pt.MidPointNorm(midpoint=5.),
                                    'extend' : 'max','cmap':'PRGn'}
@@ -157,10 +151,19 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 for i, ds_name in enumerate(cname_list):
 
                     ds = self.collections[ds_name].ds
-                    self.logger.info('Plotting %s', ds_name)
-
                     #-- need to deal with time dimension here....
-                    field = ds[v].sel(**indexer).isel(time=0)
+
+                    # Find appropriate variable name in dataset
+                    var_in_file=None
+                    for var_name in self._var_dict[v]['names_in_file']:
+                        if var_name in ds:
+                            var_in_file=var_name
+                            break
+                    if var_in_file==None:
+                        raise KeyError('Can not find variable name for {} in {}'.format(v, ds_name))
+                    field = ds[var_in_file].sel(**indexer).isel(time=0)
+                    self.logger.info('Plotting %s from %s', var_in_file, ds_name)
+
                     if is_depth_range:
                         field = field.mean(depth_coord_name)
 
@@ -169,11 +172,14 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                     if kwargs['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
 
-                    if v not in contour_specs:
-                        contour_specs[v] = {}
+                    if v not in self._var_dict:
+                        raise KeyError('{} not defined in variable YAML dict'.format(v))
 
                     cf = ax.contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                     **contour_specs[v])
+                                     levels=self._var_dict[v]['contours']['levels'],
+                                     extend=self._var_dict[v]['contours']['extend'],
+                                     cmap=self._var_dict[v]['contours']['cmap'],
+                                     norm=pt.MidPointNorm(midpoint=self._var_dict[v]['contours']['midpoint']))
                     land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
                         'physical','land','110m',
                         edgecolor='face',

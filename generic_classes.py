@@ -121,12 +121,13 @@ class GenericAnalysisElement(object):
         * variables: variables[var_name] is a list of alternative names for the variable
                      E.g. variables['nitrate'] = ['NO3', 'n_an']
     """
-    def __init__(self, config_key, config_dict):
+    def __init__(self, config_key, config_dict, var_dict):
         """ construct class object based on config_file_in (YAML format) """
         # Read YAML configuration
         self.logger = logging.getLogger(config_key)
         self._config_key = config_key
         self._config_dict = config_dict
+        self._var_dict = var_dict
         self.collections = None
         self._check()
         self._open_datasets()

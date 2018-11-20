@@ -146,7 +146,7 @@ class WOA2013Data(GenericCollection):
         self.logger = logging.getLogger('WOA2013Data')
         self._get_dataset(**kwargs['open_dataset'])
 
-    def _get_dataset(self, varname_list, freq='ann', grid='1x1d'):
+    def _get_dataset(self, dirin, varname_list, freq='ann', grid='1x1d'):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
@@ -158,7 +158,7 @@ class WOA2013Data(GenericCollection):
         for varname in varname_list:
             v = self.woa_names[varname] # pylint: disable=invalid-name
 
-            self._list_files(varname=varname, freq=freq, grid=grid)
+            self._list_files(dirin=dirin, varname=varname, freq=freq, grid=grid)
             dsi = xr.open_mfdataset(self._files, decode_times=False)
 
             if '{}_an'.format(v) in dsi.variables and varname != '{}_an'.format(v):
@@ -179,9 +179,8 @@ class WOA2013Data(GenericCollection):
             else:
                 self.ds = dsi
 
-    def _list_files(self, varname, freq='ann', grid='1x1d'):
+    def _list_files(self, dirin, varname, freq='ann', grid='1x1d'):
         """ docstring """
-        woapth = '/glade/work/mclong/woa2013v2'
         v = self.woa_names[varname] # pylint: disable=invalid-name
 
         if grid == '1x1d':
@@ -198,7 +197,7 @@ class WOA2013Data(GenericCollection):
             else:
                 raise ValueError('no file template defined for {}'.format(v))
 
-        self._files = [os.path.join(woapth, grid, f) for f in files]
+        self._files = [os.path.join(dirin, grid, f) for f in files]
 
 def woa_time_freq(freq):
     """ docstring """

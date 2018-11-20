@@ -1,0 +1,77 @@
+nitrate:
+   names_in_file:
+      - NO3
+   plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
+   contours:
+      levels:
+         - 0
+         - 0.1
+         - 0.2
+         - 0.3
+         - 0.4
+         - 0.6
+         - 0.8
+         - 1
+         - 1.5
+         - 2
+         - 4
+         - 6
+         - 8
+         - 10
+         - 12
+         - 14
+         - 16
+         - 18
+         - 20
+         - 22
+         - 24
+         - 26
+         - 28
+         - 30
+         - 34
+         - 38
+         - 42
+      midpoint: 2
+      extend: max
+      cmap: PRGn
+phosphate:
+   names_in_file:
+      - PO4
+      - po4
+      - p_an
+   plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
+   contours:
+      levels:
+         - 0
+         - 0.01
+         - 0.02
+         - 0.04
+         - 0.06
+         - 0.08
+         - 0.1
+         - 0.14
+         - 0.18
+         - 0.22
+         - 0.26
+         - 0.3
+         - 0.34
+         - 0.38
+         - 0.42
+         - 0.46
+         - 0.5
+         - 0.6
+         - 0.7
+         - 0.8
+         - 0.9
+         - 1
+         - 1.2
+         - 1.4
+         - 1.6
+         - 1.8
+         - 2
+         - 2.4
+         - 2.8
+         - 3.2
+      midpoint: 0.8
+      extend: max
+      cmap: PRGn

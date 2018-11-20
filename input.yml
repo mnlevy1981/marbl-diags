@@ -7,8 +7,8 @@ WOA2013-comparison:
   operations:
     - plot_state
   variable_list:
-    - NO3
-    - PO4
+    - nitrate
+    - phosphate
   depth_list:
     - [200., 600.]
     - 0.
@@ -75,6 +75,7 @@ WOA2013-comparison:
       role: reference
       source: woa2013
       open_dataset:
+        dirin: /glade/work/mclong/woa2013v2
         varname_list:
           - NO3
           - PO4
