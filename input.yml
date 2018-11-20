@@ -1,7 +1,7 @@
 WOA2013-comparison:
-  short_name: 'nutrients'
+  short_name: nutrients
   description: Some text here
-  dirout: '/glade/scratch/mlevy/marbl-diag-out'
+  dirout: /glade/scratch/mlevy/marbl-diag-out
   source: ocean_diagnostics
   grid: POP_gx1v7 # grid on which to conduct the analysis
   operations:
@@ -14,12 +14,42 @@ WOA2013-comparison:
     - 0.
     - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
   collections:
-    b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology:
+    b.e21.BW1850.f09_g17.CMIP6-piControl.001: # POP history files from CESM 2.1 control run
+      role: model_case
+      source: cesm
+      open_dataset:
+        filetype: hist
+        dirin: /glade/scratch/cmip6/archive/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/hist
+        case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
+        stream: pop.h
+        datestr:
+          - 031[7-9]-??
+          - 032[0-6]-??
+        variable_list:
+          - NO3
+          - PO4
+      operations:
+        - compute_mon_climatology # applied successively
+    b.e21.BW1850.f09_g17.CMIP6-piControl.001.tseries: # Same as above, but converted to time series
+      role: model_case
+      source: cesm
+      open_dataset:
+        filetype: single_variable
+        dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/proc/tseries/month_1
+        case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
+        stream: pop.h
+        datestr: 031701-032612
+        variable_list:
+          - NO3
+          - PO4
+      operations:
+        - compute_mon_climatology # applied successively
+    b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology: # Same as above, but climatology computed with pyReshaper
       role: model_case
       source: cesm
       open_dataset:
         filetype: climo
-        dirin: '/glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo'
+        dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo
         case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
         stream: mavg
         datestr: 0317-0326
@@ -27,31 +57,15 @@ WOA2013-comparison:
           - NO3
           - PO4
       operations:
-    b.e21.BW1850.f09_g17.CMIP6-piControl.001:
+    g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002: # Matt Long test case
       role: model_case
       source: cesm
       open_dataset:
         filetype: hist
-        dirin: '/glade/scratch/cmip6/archive/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/hist'
-        case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-        stream: pop.h
-        datestr:
-          - '031[7-9]-??'
-          - '032[0-6]-??'
-        variable_list:
-          - NO3
-          - PO4
-      operations:
-        - compute_mon_climatology # applied successively
-    g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002:
-      role: model_case
-      source: cesm
-      open_dataset:
-        filetype: hist
-        dirin: '/glade/scratch/mclong/archive/g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002/ocn/hist'
+        dirin: /glade/scratch/mclong/archive/g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002/ocn/hist
         case: g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002
         stream: pop.h
-        datestr: '????-??'
+        datestr: ????-??
         variable_list:
           - NO3
           - PO4
