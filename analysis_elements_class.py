@@ -85,15 +85,6 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
 
     def plot_state(self, **kwargs):
         """ Regardless of data source, generate png """
-        contour_specs = {'O2' : {'levels' : np.concatenate((np.arange(0,5,1),np.arange(5,10,2),np.arange(10,30,5),np.arange(30,70,10),np.arange(80,150,20),np.arange(150,325,25))),
-                                 'norm' : pt.MidPointNorm(midpoint=50.),
-                                 'extend' : 'max','cmap':'PuOr'},
-                         'SiO3' : {'levels' : np.concatenate((np.arange(0,10,1),np.arange(10,50,5),np.arange(50,100,10),np.arange(100,200,20))),
-                                   'norm' : pt.MidPointNorm(midpoint=5.),
-                                   'extend' : 'max','cmap':'PRGn'}
-                         }
-
-
         # look up grid (move to known grids database)
         if kwargs['grid'] == 'POP_gx1v7':
             # and is tracer....

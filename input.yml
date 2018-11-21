@@ -9,6 +9,8 @@ WOA2013-comparison:
   variable_list:
     - nitrate
     - phosphate
+    - oxygen
+    - silicate
   depth_list:
     - [200., 600.]
     - 0.
@@ -28,6 +30,8 @@ WOA2013-comparison:
         variable_list:
           - NO3
           - PO4
+          - O2
+          - SiO3
       operations:
         - compute_mon_climatology # applied successively
     b.e21.BW1850.f09_g17.CMIP6-piControl.001.tseries: # Same as above, but converted to time series
@@ -42,6 +46,8 @@ WOA2013-comparison:
         variable_list:
           - NO3
           - PO4
+          - O2
+          - SiO3
       operations:
         - compute_mon_climatology # applied successively
     b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology: # Same as above, but climatology computed with pyReshaper
@@ -56,6 +62,8 @@ WOA2013-comparison:
         variable_list:
           - NO3
           - PO4
+          - O2
+          - SiO3
       operations:
     g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002: # Matt Long test case
       role: model_case
@@ -69,6 +77,8 @@ WOA2013-comparison:
         variable_list:
           - NO3
           - PO4
+          - O2
+          - SiO3
       operations:
         - compute_mon_climatology # applied successively
     WOA2013:
@@ -79,6 +89,8 @@ WOA2013-comparison:
         varname_list:
           - NO3
           - PO4
+          - O2
+          - SiO3
         freq: mon
         grid: POP_gx1v7
       operations:
