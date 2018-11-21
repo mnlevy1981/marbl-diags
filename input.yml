@@ -70,7 +70,7 @@ CESM2.1_PI-WOA2013-comparison:
       source: woa2013
       open_dataset:
         dirin: /glade/work/mclong/woa2013v2
-        varname_list:
+        variable_list:
           - NO3
           - PO4
           - O2
@@ -115,7 +115,7 @@ Bats-WOA2013-comparison:
       source: woa2013
       open_dataset:
         dirin: /glade/work/mclong/woa2013v2
-        varname_list:
+        variable_list:
           - NO3
           - PO4
           - O2

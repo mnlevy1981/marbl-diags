@@ -81,25 +81,21 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         for op in self._config_dict['operations']:
             self.logger.info('Calling %s for %s', op, self._config_key)
             func = getattr(self, op)
-            func(**self._config_dict)
+            func()
 
-    def plot_state(self, **kwargs):
+    def plot_state(self):
         """ Regardless of data source, generate png """
         # look up grid (move to known grids database)
-        if kwargs['grid'] == 'POP_gx1v7':
+        if self._config_dict['grid'] == 'POP_gx1v7':
             # and is tracer....
             depth_coord_name = 'z_t'
         else:
             raise ValueError('unknown grid')
 
         # where will plots be written?
-        dirout = kwargs['dirout']+'/plots'
+        dirout = self._config_dict['dirout']+'/plots'
         if not os.path.exists(dirout):
             call(['mkdir', '-p', dirout])
-
-        nrow, ncol = pt.get_plot_dims(len(self.collections))
-        self.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
-                         nrow, ncol, len(self.collections))
 
         # identify reference (if any provided)
         ref_cname = None
@@ -113,10 +109,26 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         else:
             self.logger.info("No reference dataset specified")
 
-        #-- loop over variables
-        for v in kwargs['variable_list']:
+        #-- loop over datasets
+        cname_list = self.collections.keys()
+        if ref_cname:
+            cname_list = [ref_cname] + [cname for cname in cname_list if cname != ref_cname]
 
-            for sel_z in kwargs['depth_list']:
+        #-- loop over variables
+        for v in self._config_dict['variable_list']:
+
+            cname_list_v = []
+            for cname in cname_list:
+                for var_name in self._var_dict[v]['names_in_file']:
+                    if var_name in self._config_dict['collections'][cname]['open_dataset']['variable_list']:
+                        cname_list_v.append(cname)
+                        break
+
+            nrow, ncol = pt.get_plot_dims(len(cname_list_v))
+            self.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
+                             nrow, ncol, len(cname_list_v))
+
+            for sel_z in self._config_dict['depth_list']:
 
                 #-- build indexer for depth
                 if isinstance(sel_z, list): # fragile?
@@ -129,17 +141,13 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                     depth_str = '{:.0f}m'.format(sel_z)
 
                 #-- name of the plot
-                plot_name = '{}/state-map-{}.{}.{}.png'.format(dirout, kwargs['short_name'], v, depth_str)
+                plot_name = '{}/state-map-{}.{}.{}.png'.format(dirout, self._config_dict['short_name'], v, depth_str)
                 logging.info('generating plot: %s', plot_name)
 
                 #-- generate figure object
                 fig = plt.figure(figsize=(ncol*6,nrow*4))
 
-                #-- loop over datasets
-                cname_list = self.collections.keys()
-                if ref_cname:
-                    cname_list = [ref_cname] + [cname for cname in cname_list if cname != ref_cname]
-                for i, ds_name in enumerate(cname_list):
+                for i, ds_name in enumerate(cname_list_v):
 
                     ds = self.collections[ds_name].ds
                     #-- need to deal with time dimension here....
@@ -160,7 +168,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
 
                     ax = fig.add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
 
-                    if kwargs['grid'] == 'POP_gx1v7':
+                    if self._config_dict['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
 
                     if v not in self._var_dict:

@@ -146,16 +146,16 @@ class WOA2013Data(GenericCollection):
         self.logger = logging.getLogger('WOA2013Data')
         self._get_dataset(**kwargs['open_dataset'])
 
-    def _get_dataset(self, dirin, varname_list, freq='ann', grid='1x1d'):
+    def _get_dataset(self, dirin, variable_list, freq='ann', grid='1x1d'):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
                       'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
-        if not isinstance(varname_list, list):
-            varname_list = [varname_list]
+        if not isinstance(variable_list, list):
+            variable_list = [variable_list]
 
         self.ds = xr.Dataset()
-        for varname in varname_list:
+        for varname in variable_list:
             v = self.woa_names[varname] # pylint: disable=invalid-name
 
             self._list_files(dirin=dirin, varname=varname, freq=freq, grid=grid)
