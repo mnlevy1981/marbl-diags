@@ -1,6 +1,6 @@
-WOA2013-comparison:
-  short_name: nutrients
-  description: Some text here
+CESM2.1_PI-WOA2013-comparison:
+  short_name: cesm2.1
+  description: Comparing the CESM 2.1 preindustrial control to WOA2013
   dirout: /glade/scratch/mlevy/marbl-diag-out
   source: ocean_diagnostics
   grid: POP_gx1v7 # grid on which to conduct the analysis
@@ -12,8 +12,8 @@ WOA2013-comparison:
     - oxygen
     - silicate
   depth_list:
-    - [200., 600.]
     - 0.
+    - [200., 600.]
     - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
   collections:
     b.e21.BW1850.f09_g17.CMIP6-piControl.001: # POP history files from CESM 2.1 control run
@@ -65,6 +65,35 @@ WOA2013-comparison:
           - O2
           - SiO3
       operations:
+    WOA2013:
+      role: reference
+      source: woa2013
+      open_dataset:
+        dirin: /glade/work/mclong/woa2013v2
+        varname_list:
+          - NO3
+          - PO4
+          - O2
+          - SiO3
+        freq: mon
+        grid: POP_gx1v7
+      operations:
+Bats-WOA2013-comparison:
+  short_name: hot_bats_13c
+  description: Comparing Matt's hot_bats_13c to WOA
+  dirout: /glade/scratch/mlevy/marbl-diag-out
+  source: ocean_diagnostics
+  grid: POP_gx1v7 # grid on which to conduct the analysis
+  operations:
+    - plot_state
+  variable_list:
+    - nitrate
+    - phosphate
+  depth_list:
+    - 0.
+    - [200., 600.]
+    - [2000., 5000.]
+  collections:
     g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002: # Matt Long test case
       role: model_case
       source: cesm
