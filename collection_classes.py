@@ -25,12 +25,9 @@ class CESMData(GenericCollection):
         self.logger = logging.getLogger('CESMData')
         self._get_dataset(**kwargs['open_dataset'])
 
-    def _get_dataset(self, filetype, dirin, case, stream, datestr, variable_list):
+    def _get_dataset(self, filetype, dirin, case, stream, datestr, variable_dict):
         """ docstring """
         xr_open_ds = {'decode_coords' : False, 'decode_times' : False, 'data_vars' : 'minimal'}
-        if isinstance(variable_list, str):
-            variable_list = [variable_list]
-
         if isinstance(datestr, str):
             datestr = [datestr]
 
@@ -53,20 +50,19 @@ class CESMData(GenericCollection):
             elif 'time_bound' in self.ds:
                 tb_name = 'time_bound'
 
-            if variable_list:
+            static_vars = [v for v, da in self.ds.variables.items()
+                           if 'time' not in da.dims]
+            self.logger.debug('static vars: %s', static_vars)
 
-                static_vars = [v for v, da in self.ds.variables.items()
-                               if 'time' not in da.dims]
-                self.logger.debug('static vars: %s', static_vars)
+            variable_list = variable_dict.values()
+            keep_vars = ['time', tb_name]+variable_list+static_vars
+            self.logger.debug('keep vars: %s', keep_vars)
 
-                keep_vars = ['time', tb_name]+variable_list+static_vars
-                self.logger.debug('keep vars: %s', keep_vars)
+            drop_vars = [v for v, da in self.ds.variables.items()
+                         if 'time' in da.dims and v not in keep_vars]
 
-                drop_vars = [v for v, da in self.ds.variables.items()
-                             if 'time' in da.dims and v not in keep_vars]
-
-                self.logger.debug('dropping vars: %s', drop_vars)
-                self.ds = self.ds.drop(drop_vars)
+            self.logger.debug('dropping vars: %s', drop_vars)
+            self.ds = self.ds.drop(drop_vars)
 
         elif filetype == 'climo':
 
@@ -87,28 +83,27 @@ class CESMData(GenericCollection):
             elif 'time_bound' in self.ds:
                 tb_name = 'time_bound'
 
-            if variable_list:
+            static_vars = [v for v, da in self.ds.variables.items()
+                           if 'time' not in da.dims]
+            self.logger.debug('static vars: %s', static_vars)
 
-                static_vars = [v for v, da in self.ds.variables.items()
-                               if 'time' not in da.dims]
-                self.logger.debug('static vars: %s', static_vars)
+            variable_list = variable_dict.values()
+            keep_vars = ['time', tb_name]+variable_list+static_vars
+            self.logger.debug('keep vars: %s', keep_vars)
 
-                keep_vars = ['time', tb_name]+variable_list+static_vars
-                self.logger.debug('keep vars: %s', keep_vars)
+            drop_vars = [v for v, da in self.ds.variables.items()
+                         if 'time' in da.dims and v not in keep_vars]
 
-                drop_vars = [v for v, da in self.ds.variables.items()
-                             if 'time' in da.dims and v not in keep_vars]
-
-                self.logger.debug('dropping vars: %s', drop_vars)
-                self.ds = self.ds.drop(drop_vars)
+            self.logger.debug('dropping vars: %s', drop_vars)
+            self.ds = self.ds.drop(drop_vars)
 
         elif filetype == 'single_variable':
 
-            if not variable_list:
-                raise ValueError('Format %s requires variable_list.' % filetype)
+            if not variable_dict:
+                raise ValueError('Format %s requires variable_dict.' % filetype)
 
             self.ds = xr.Dataset()
-            for variable in variable_list:
+            for _, variable in variable_dict.items():
                 file_name_pattern = []
                 for date_str in datestr:
                     file_name_pattern.append('{}/{}.{}.{}.{}.nc'.format(
@@ -139,26 +134,24 @@ class CESMData(GenericCollection):
 
 class WOA2013Data(GenericCollection):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
-    def __init__(self, **kwargs):
+    def __init__(self, var_dict, **kwargs):
         super(WOA2013Data, self).__init__(**kwargs)
-        self.woa_names = {'T':'t', 'S':'s', 'NO3':'n', 'O2':'o', 'O2sat':'O', 'AOU':'A',
-                          'SiO3':'i', 'PO4':'p'}
+        # self.woa_names = {'T':'t', 'S':'s', 'NO3':'n', 'O2':'o', 'O2sat':'O', 'AOU':'A',
+        #                   'SiO3':'i', 'PO4':'p'}
         self.logger = logging.getLogger('WOA2013Data')
-        self._get_dataset(**kwargs['open_dataset'])
+        self._get_dataset(var_dict, **kwargs['open_dataset'])
 
-    def _get_dataset(self, dirin, variable_list, freq='ann', grid='1x1d'):
+    def _get_dataset(self, var_dict, dirin, variable_dict, freq='ann', grid='1x1d'):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
                       'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
-        if not isinstance(variable_list, list):
-            variable_list = [variable_list]
 
         self.ds = xr.Dataset()
-        for varname in variable_list:
-            v = self.woa_names[varname] # pylint: disable=invalid-name
+        for varname_generic, varname in variable_dict.items():
+            v = var_dict[varname_generic]['woa_name'] # pylint: disable=invalid-name
 
-            self._list_files(dirin=dirin, varname=varname, freq=freq, grid=grid)
+            self._list_files(dirin=dirin, v=v, freq=freq, grid=grid)
             dsi = xr.open_mfdataset(self._files, decode_times=False)
 
             if '{}_an'.format(v) in dsi.variables and varname != '{}_an'.format(v):
@@ -179,9 +172,8 @@ class WOA2013Data(GenericCollection):
             else:
                 self.ds = dsi
 
-    def _list_files(self, dirin, varname, freq='ann', grid='1x1d'):
+    def _list_files(self, dirin, v, freq='ann', grid='1x1d'):
         """ docstring """
-        v = self.woa_names[varname] # pylint: disable=invalid-name
 
         if grid == '1x1d':
             res_code = '01'

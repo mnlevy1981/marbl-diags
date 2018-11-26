@@ -150,6 +150,7 @@ class GenericAnalysisElement(object):
               role:
               source:
               open_dataset:
+                variable_dict:
               operations:
                 {{ List of methods of form: ds = func(ds) }}
 
@@ -172,6 +173,11 @@ class GenericAnalysisElement(object):
                 if expected_key not in self._config_dict['collections'][collection]:
                     raise KeyError("Can not find '%s' in '%s' section of collections" %
                                    (expected_key, collection))
+            if 'variable_dict' not in self._config_dict['collections'][collection]['open_dataset']:
+                raise KeyError("Can not find 'variable_dict' in '%s' section of collections" %
+                               collection)
+            if not isinstance(self._config_dict['collections'][collection]['open_dataset'], dict):
+                raise TypeError("'variable_dict' is not a dict in '%s'" % collection)
         self.logger.info("Contents of %s contain all necessary data", self._config_key)
 
     def _open_datasets(self):

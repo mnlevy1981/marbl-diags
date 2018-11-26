@@ -27,11 +27,11 @@ CESM2.1_PI-WOA2013-comparison:
         datestr:
           - 031[7-9]-??
           - 032[0-6]-??
-        variable_list:
-          - NO3
-          - PO4
-          - O2
-          - SiO3
+        variable_dict:
+          nitrate: NO3
+          phosphate: PO4
+          oxygen: O2
+          silicate: SiO3
       operations:
         - compute_mon_climatology # applied successively
     b.e21.BW1850.f09_g17.CMIP6-piControl.001.tseries: # Same as above, but converted to time series
@@ -43,11 +43,11 @@ CESM2.1_PI-WOA2013-comparison:
         case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
         stream: pop.h
         datestr: 031701-032612
-        variable_list:
-          - NO3
-          - PO4
-          - O2
-          - SiO3
+        variable_dict:
+          nitrate: NO3
+          phosphate: PO4
+          oxygen: O2
+          silicate: SiO3
       operations:
         - compute_mon_climatology # applied successively
     b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology: # Same as above, but climatology computed with pyReshaper
@@ -59,26 +59,26 @@ CESM2.1_PI-WOA2013-comparison:
         case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
         stream: mavg
         datestr: 0317-0326
-        variable_list:
-          - NO3
-          - PO4
-          - O2
-          - SiO3
+        variable_dict:
+          nitrate: NO3
+          phosphate: PO4
+          oxygen: O2
+          silicate: SiO3
       operations:
     WOA2013:
       role: reference
       source: woa2013
       open_dataset:
         dirin: /glade/work/mclong/woa2013v2
-        variable_list:
-          - NO3
-          - PO4
-          - O2
-          - SiO3
+        variable_dict:
+          nitrate: NO3
+          phosphate: PO4
+          oxygen: O2
+          silicate: SiO3
         freq: mon
         grid: POP_gx1v7
       operations:
-Bats-WOA2013-comparison:
+bats-WOA2013-comparison:
   short_name: hot_bats_13c
   description: Comparing Matt's hot_bats_13c to WOA
   dirout: /glade/scratch/mlevy/marbl-diag-out
@@ -103,11 +103,11 @@ Bats-WOA2013-comparison:
         case: g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002
         stream: pop.h
         datestr: ????-??
-        variable_list:
-          - NO3
-          - PO4
-          - O2
-          - SiO3
+        variable_dict:
+          nitrate: NO3
+          phosphate: PO4
+          oxygen: O2
+          silicate: SiO3
       operations:
         - compute_mon_climatology # applied successively
     WOA2013:
@@ -115,11 +115,11 @@ Bats-WOA2013-comparison:
       source: woa2013
       open_dataset:
         dirin: /glade/work/mclong/woa2013v2
-        variable_list:
-          - NO3
-          - PO4
-          - O2
-          - SiO3
+        variable_dict:
+          nitrate: NO3
+          phosphate: PO4
+          oxygen: O2
+          silicate: SiO3
         freq: mon
         grid: POP_gx1v7
       operations:

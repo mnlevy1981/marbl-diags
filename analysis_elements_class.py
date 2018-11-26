@@ -42,6 +42,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                         **self._config_dict['collections'][collection])
                 elif self._config_dict['collections'][collection]['source'] == 'woa2013':
                     self.collections[collection] = collection_classes.WOA2013Data(
+                        var_dict=self._var_dict,
                         **self._config_dict['collections'][collection])
                 else:
                     raise ValueError("Unknown source '%s'" %
@@ -119,10 +120,8 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
 
             cname_list_v = []
             for cname in cname_list:
-                for var_name in self._var_dict[v]['names_in_file']:
-                    if var_name in self._config_dict['collections'][cname]['open_dataset']['variable_list']:
-                        cname_list_v.append(cname)
-                        break
+                if v in self._config_dict['collections'][cname]['open_dataset']['variable_dict']:
+                    cname_list_v.append(cname)
 
             nrow, ncol = pt.get_plot_dims(len(cname_list_v))
             self.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
@@ -153,15 +152,11 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                     #-- need to deal with time dimension here....
 
                     # Find appropriate variable name in dataset
-                    var_in_file=None
-                    for var_name in self._var_dict[v]['names_in_file']:
-                        if var_name in ds:
-                            var_in_file=var_name
-                            break
-                    if var_in_file==None:
-                        raise KeyError('Can not find variable name for {} in {}'.format(v, ds_name))
-                    field = ds[var_in_file].sel(**indexer).isel(time=0)
-                    self.logger.info('Plotting %s from %s', var_in_file, ds_name)
+                    var_name = self._config_dict['collections'][cname]['open_dataset']['variable_dict'][v]
+                    if var_name not in ds:
+                        raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
+                    field = ds[var_name].sel(**indexer).isel(time=0)
+                    self.logger.info('Plotting %s from %s', var_name, ds_name)
 
                     if is_depth_range:
                         field = field.mean(depth_coord_name)

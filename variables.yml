@@ -1,6 +1,5 @@
 nitrate:
-   names_in_file:
-      - NO3
+   woa_name: n
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
       levels:
@@ -35,10 +34,7 @@ nitrate:
       extend: max
       cmap: PRGn
 phosphate:
-   names_in_file:
-      - PO4
-      - po4
-      - p_an
+   woa_name: p
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
       levels:
@@ -76,8 +72,7 @@ phosphate:
       extend: max
       cmap: PRGn
 oxygen:
-   names_in_file:
-      - O2
+   woa_name: o
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
       levels:
@@ -112,8 +107,7 @@ oxygen:
       extend: max
       cmap: PuOr
 silicate:
-   names_in_file:
-      - SiO3
+   woa_name: i
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
       levels:
