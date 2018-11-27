@@ -136,10 +136,19 @@ class WOA2013Data(GenericCollection):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, var_dict, **kwargs):
         super(WOA2013Data, self).__init__(**kwargs)
-        # self.woa_names = {'T':'t', 'S':'s', 'NO3':'n', 'O2':'o', 'O2sat':'O', 'AOU':'A',
-        #                   'SiO3':'i', 'PO4':'p'}
+        self._set_woa_names()
         self.logger = logging.getLogger('WOA2013Data')
         self._get_dataset(var_dict, **kwargs['open_dataset'])
+
+    def _set_woa_names(self):
+        """ Define the _woa_names dictionary """
+        # self.woa_names = {'T':'t', 'S':'s', 'NO3':'n', 'O2':'o', 'O2sat':'O', 'AOU':'A',
+        #                   'SiO3':'i', 'PO4':'p'}
+        self._woa_names = dict()
+        self._woa_names['nitrate'] = 'n'
+        self._woa_names['phosphate'] = 'p'
+        self._woa_names['oxygen'] = 'o'
+        self._woa_names['silicate'] = 'i'
 
     def _get_dataset(self, var_dict, dirin, variable_dict, freq='ann', grid='1x1d'):
         """ docstring """
@@ -149,7 +158,7 @@ class WOA2013Data(GenericCollection):
 
         self.ds = xr.Dataset()
         for varname_generic, varname in variable_dict.items():
-            v = var_dict[varname_generic]['woa_name'] # pylint: disable=invalid-name
+            v = self._woa_names[varname_generic] # pylint: disable=invalid-name
 
             self._list_files(dirin=dirin, v=v, freq=freq, grid=grid)
             dsi = xr.open_mfdataset(self._files, decode_times=False)
