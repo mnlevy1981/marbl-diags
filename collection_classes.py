@@ -54,8 +54,7 @@ class CESMData(GenericCollection):
                            if 'time' not in da.dims]
             self.logger.debug('static vars: %s', static_vars)
 
-            variable_list = variable_dict.values()
-            keep_vars = ['time', tb_name]+variable_list+static_vars
+            keep_vars = ['time', tb_name]+[var for var in variable_dict.values()]+static_vars
             self.logger.debug('keep vars: %s', keep_vars)
 
             drop_vars = [v for v, da in self.ds.variables.items()
@@ -87,8 +86,7 @@ class CESMData(GenericCollection):
                            if 'time' not in da.dims]
             self.logger.debug('static vars: %s', static_vars)
 
-            variable_list = variable_dict.values()
-            keep_vars = ['time', tb_name]+variable_list+static_vars
+            keep_vars = ['time', tb_name]+[var for var in variable_dict.values()]+static_vars
             self.logger.debug('keep vars: %s', keep_vars)
 
             drop_vars = [v for v, da in self.ds.variables.items()
@@ -103,7 +101,7 @@ class CESMData(GenericCollection):
                 raise ValueError('Format %s requires variable_dict.' % filetype)
 
             self.ds = xr.Dataset()
-            for _, variable in variable_dict.items():
+            for variable in variable_dict.values():
                 file_name_pattern = []
                 for date_str in datestr:
                     file_name_pattern.append('{}/{}.{}.{}.{}.nc'.format(

@@ -15,5 +15,5 @@ if __name__ == "__main__":
     AnalysisElements = dict()
     for config_key, config_dict in config_dicts.items():
         AnalysisElements[config_key] = analysis_elements_class.AnalysisElements(config_key, config_dict, var_dict) # pylint: disable=invalid-name
-    for _, AnalysisElement in AnalysisElements.items():
+    for AnalysisElement in AnalysisElements.values():
         AnalysisElement.do_analysis()
