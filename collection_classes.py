@@ -28,11 +28,21 @@ class CachedData(GenericCollection):
             self._var_dict = json.load(file_in)
         del self._var_dict_in
 
+    def compute_mon_climatology(self):
+        """ Cached data should already be climatology """
+        pass
+
 class CESMData(GenericCollection):
     """ Class built around reading CESM history files """
     def __init__(self, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
         self._get_dataset(**kwargs['open_dataset'])
+
+    def compute_mon_climatology(self):
+        """ Compute monthly climatology (if necessary) """
+        if self._is_climo:
+            return
+        super(CESMData, self).compute_mon_climatology()
 
     def _get_dataset(self, filetype, dirin, case, stream, datestr):
         """ docstring """
@@ -42,6 +52,7 @@ class CESMData(GenericCollection):
 
         if filetype == 'hist':
 
+            self._is_climo = False
             file_name_pattern = []
             for date_str in datestr:
                 file_name_pattern.append('{}/{}.{}.{}.nc'.format(dirin, case, stream, date_str))
@@ -74,6 +85,7 @@ class CESMData(GenericCollection):
 
         elif filetype == 'climo':
 
+            self._is_climo = True
             file_name_pattern = []
             for date_str in datestr:
                 file_name_pattern.append('{}/{}.{}.nc'.format(dirin, stream, date_str))
@@ -106,6 +118,7 @@ class CESMData(GenericCollection):
 
         elif filetype == 'single_variable':
 
+            self._is_climo = False
             self.ds = xr.Dataset()
             for variable in self._var_dict.values():
                 file_name_pattern = []
@@ -216,6 +229,11 @@ class WOA2013Data(GenericCollection):
                 raise ValueError('no file template defined for {}'.format(v))
 
         self._files = [os.path.join(dirin, grid, f) for f in files]
+
+    def compute_mon_climatology(self):
+        """ WOA2013 data should already be climatology """
+        pass
+
 
 def woa_time_freq(freq):
     """ docstring """
