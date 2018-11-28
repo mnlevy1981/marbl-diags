@@ -2,6 +2,7 @@
 
 import logging
 import os
+import json
 from subprocess import call
 from datetime import datetime
 import cftime
@@ -9,12 +10,15 @@ import xarray as xr
 
 class GenericCollection(object): # pylint: disable=useless-object-inheritance
     """ Class containing functions used regardless of data source """
-    def __init__(self, **kwargs):
-        self.logger = None
+    def __init__(self, child_class=None, **kwargs):
+        if child_class:
+            self.logger = logging.getLogger(child_class)
         self._files = None
         self.role = kwargs['role']
         self.source = kwargs['source']
         self.ds = None # pylint: disable=invalid-name
+        self._var_dict = None
+        self._set_var_dict()
 
     ###################
     # PUBLIC ROUTINES #
@@ -61,12 +65,24 @@ class GenericCollection(object): # pylint: disable=useless-object-inheritance
 
         self.ds = ds
 
-    def cache_dataset(self, cached_location):
+    def cache_dataset(self, cached_location, cached_var_dict):
         """
         Function to write output:
            - optionally add some file-level attrs
            - switch method based on file extension
         """
+
+        diro = os.path.dirname(cached_var_dict)
+        if not os.path.exists(diro):
+            self.logger.info('creating %s', diro)
+            call(['mkdir', '-p', diro])
+
+        if os.path.exists(cached_var_dict):
+            call(['rm', '-f', cached_var_dict])
+
+        # Write json dictionary for var_dict
+        with open(cached_var_dict, "w") as file_out:
+            json.dump(self._var_dict, file_out, separators=(',', ': '), sort_keys=True, indent=3)
 
         diro = os.path.dirname(cached_location)
         if not os.path.exists(diro):
@@ -113,6 +129,13 @@ class GenericCollection(object): # pylint: disable=useless-object-inheritance
         tb_dim = self.ds[tb_name].dims[1]
         return tb_name, tb_dim
 
+    def _set_var_dict(self):
+        """
+        Each class derived from GenericCollection needs to map from generic variable names to
+        model-specific variable names.
+        """
+        raise NotImplementedError('_set_var_dict needs to be defined in child classes')
+
 class GenericAnalysisElement(object):
     """
     Objects in this class
@@ -150,9 +173,6 @@ class GenericAnalysisElement(object):
               role:
               source:
               open_dataset:
-                variable_dict:
-              operations:
-                {{ List of methods of form: ds = func(ds) }}
 
 
         collections: is a collection of datasets;
@@ -173,11 +193,6 @@ class GenericAnalysisElement(object):
                 if expected_key not in self._config_dict['collections'][collection]:
                     raise KeyError("Can not find '%s' in '%s' section of collections" %
                                    (expected_key, collection))
-            if 'variable_dict' not in self._config_dict['collections'][collection]['open_dataset']:
-                raise KeyError("Can not find 'variable_dict' in '%s' section of collections" %
-                               collection)
-            if not isinstance(self._config_dict['collections'][collection]['open_dataset'], dict):
-                raise TypeError("'variable_dict' is not a dict in '%s'" % collection)
         self.logger.info("Contents of %s contain all necessary data", self._config_key)
 
     def _open_datasets(self):

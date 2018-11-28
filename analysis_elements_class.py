@@ -16,17 +16,25 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
     def _open_datasets(self):
         """ Open requested datasets """
         self.collections = dict()
+        self._cached_locations = dict()
+        self._cached_var_dicts = dict()
         for collection in self._config_dict['collections']:
             self.logger.info("Creating data object for %s in %s", collection, self._config_key)
-            cached_location = "{}/work/{}.{}.{}".format(
+            self._cached_locations[collection] = "{}/work/{}.{}.{}".format(
                 self._config_dict['dirout'],
                 self._config_key,
                 collection,
                 'zarr')
-            if os.path.exists(cached_location):
-                self.logger.info('Opening %s', cached_location)
+            self._cached_var_dicts[collection] = "{}/work/{}.{}.json".format(
+                self._config_dict['dirout'],
+                self._config_key,
+                collection)
+            if os.path.exists(self._cached_locations[collection]):
+                self.logger.info('Opening %s', self._cached_locations[collection])
                 self.collections[collection] = collection_classes.CachedData(
-                    data_root=cached_location, data_type='zarr',
+                    data_root=self._cached_locations[collection],
+                    var_dict_in=self._cached_var_dicts[collection],
+                    data_type='zarr',
                     **self._config_dict['collections'][collection])
             else:
                 self.logger.info('Opening %s',
@@ -60,12 +68,8 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 func()
                 self.logger.info('ds = %s', self.collections[collection].ds)
                 # write to cache
-                cached_location = "{}/work/{}.{}.{}".format(
-                    self._config_dict['dirout'],
-                    self._config_key,
-                    collection,
-                    'zarr')
-                self.collections[collection].cache_dataset(cached_location)
+                self.collections[collection].cache_dataset(self._cached_locations[collection],
+                                                           self._cached_var_dicts[collection])
 
     ###################
     # PUBLIC ROUTINES #

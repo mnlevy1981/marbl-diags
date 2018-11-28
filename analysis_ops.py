@@ -6,6 +6,8 @@ from subprocess import call
 import cartopy
 import cartopy.crs as ccrs
 import numpy as np
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import plottools as pt
 
@@ -43,14 +45,9 @@ def plot_state(AnalysisElement):
     #-- loop over variables
     for v in AnalysisElement._config_dict['variable_list']:
 
-        cname_list_v = []
-        for cname in cname_list:
-            if v in AnalysisElement._config_dict['collections'][cname]['open_dataset']['variable_dict']:
-                cname_list_v.append(cname)
-
-        nrow, ncol = pt.get_plot_dims(len(cname_list_v))
+        nrow, ncol = pt.get_plot_dims(len(cname_list))
         AnalysisElement.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
-                         nrow, ncol, len(cname_list_v))
+                         nrow, ncol, len(cname_list))
 
         for sel_z in AnalysisElement._config_dict['depth_list']:
 
@@ -71,13 +68,13 @@ def plot_state(AnalysisElement):
             #-- generate figure object
             fig = plt.figure(figsize=(ncol*6,nrow*4))
 
-            for i, ds_name in enumerate(cname_list_v):
+            for i, ds_name in enumerate(cname_list):
 
                 ds = AnalysisElement.collections[ds_name].ds
                 #-- need to deal with time dimension here....
 
                 # Find appropriate variable name in dataset
-                var_name = AnalysisElement._config_dict['collections'][cname]['open_dataset']['variable_dict'][v]
+                var_name = AnalysisElement.collections[ds_name]._var_dict[v]
                 if var_name not in ds:
                     raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
                 field = ds[var_name].sel(**indexer).isel(time=0)

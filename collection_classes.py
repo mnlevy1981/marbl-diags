@@ -3,14 +3,15 @@
 import glob
 import logging
 import os
+import json
 import xarray as xr
 from generic_classes import GenericCollection
 
 class CachedData(GenericCollection):
     """ Class built around reading previously-cached data """
-    def __init__(self, data_root, data_type, **kwargs):
-        super(CachedData, self).__init__(**kwargs)
-        self.logger = logging.getLogger('CachedData')
+    def __init__(self, data_root, var_dict_in, data_type, **kwargs):
+        self._var_dict_in = var_dict_in
+        super(CachedData, self).__init__(child_class='CachedData', **kwargs)
         self._get_dataset(data_root, data_type)
 
     def _get_dataset(self, data_root, data_type):
@@ -18,14 +19,22 @@ class CachedData(GenericCollection):
         if data_type == 'zarr':
             self.ds = xr.open_zarr(data_root, decode_times=False, decode_coords=False) # pylint: disable=invalid-name
 
+    def _set_var_dict(self):
+        if not os.path.exists(self._var_dict_in):
+            raise FileNotFoundError('Can not find %s' % self._var_dict_in)
+
+        self.logger.info('Getting cached variable dictionary from %s', self._var_dict_in)
+        with open(self._var_dict_in) as file_in:
+            self._var_dict = json.load(file_in)
+        del self._var_dict_in
+
 class CESMData(GenericCollection):
     """ Class built around reading CESM history files """
     def __init__(self, **kwargs):
-        super(CESMData, self).__init__(**kwargs)
-        self.logger = logging.getLogger('CESMData')
+        super(CESMData, self).__init__(child_class='CESMData', **kwargs)
         self._get_dataset(**kwargs['open_dataset'])
 
-    def _get_dataset(self, filetype, dirin, case, stream, datestr, variable_dict):
+    def _get_dataset(self, filetype, dirin, case, stream, datestr):
         """ docstring """
         xr_open_ds = {'decode_coords' : False, 'decode_times' : False, 'data_vars' : 'minimal'}
         if isinstance(datestr, str):
@@ -54,7 +63,7 @@ class CESMData(GenericCollection):
                            if 'time' not in da.dims]
             self.logger.debug('static vars: %s', static_vars)
 
-            keep_vars = ['time', tb_name]+[var for var in variable_dict.values()]+static_vars
+            keep_vars = ['time', tb_name]+[var for var in self._var_dict.values()]+static_vars
             self.logger.debug('keep vars: %s', keep_vars)
 
             drop_vars = [v for v, da in self.ds.variables.items()
@@ -86,7 +95,7 @@ class CESMData(GenericCollection):
                            if 'time' not in da.dims]
             self.logger.debug('static vars: %s', static_vars)
 
-            keep_vars = ['time', tb_name]+[var for var in variable_dict.values()]+static_vars
+            keep_vars = ['time', tb_name]+[var for var in self._var_dict.values()]+static_vars
             self.logger.debug('keep vars: %s', keep_vars)
 
             drop_vars = [v for v, da in self.ds.variables.items()
@@ -97,11 +106,8 @@ class CESMData(GenericCollection):
 
         elif filetype == 'single_variable':
 
-            if not variable_dict:
-                raise ValueError('Format %s requires variable_dict.' % filetype)
-
             self.ds = xr.Dataset()
-            for variable in variable_dict.values():
+            for variable in self._var_dict.values():
                 file_name_pattern = []
                 for date_str in datestr:
                     file_name_pattern.append('{}/{}.{}.{}.{}.nc'.format(
@@ -130,12 +136,18 @@ class CESMData(GenericCollection):
         if not self._files:
             raise ValueError('No files: %s' % glob_pattern)
 
+    def _set_var_dict(self):
+        self._var_dict = dict()
+        self._var_dict['nitrate'] = 'NO3'
+        self._var_dict['phosphate'] = 'PO4'
+        self._var_dict['oxygen'] = 'O2'
+        self._var_dict['silicate'] = 'SiO3'
+
 class WOA2013Data(GenericCollection):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, var_dict, **kwargs):
-        super(WOA2013Data, self).__init__(**kwargs)
+        super(WOA2013Data, self).__init__(child_class='WOA2013Data', **kwargs)
         self._set_woa_names()
-        self.logger = logging.getLogger('WOA2013Data')
         self._get_dataset(var_dict, **kwargs['open_dataset'])
 
     def _set_woa_names(self):
@@ -148,14 +160,21 @@ class WOA2013Data(GenericCollection):
         self._woa_names['oxygen'] = 'o'
         self._woa_names['silicate'] = 'i'
 
-    def _get_dataset(self, var_dict, dirin, variable_dict, freq='ann', grid='1x1d'):
+    def _set_var_dict(self):
+        self._var_dict = dict()
+        self._var_dict['nitrate'] = 'NO3'
+        self._var_dict['phosphate'] = 'PO4'
+        self._var_dict['oxygen'] = 'O2'
+        self._var_dict['silicate'] = 'SiO3'
+
+    def _get_dataset(self, var_dict, dirin, freq='ann', grid='1x1d'):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
                       'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
 
         self.ds = xr.Dataset()
-        for varname_generic, varname in variable_dict.items():
+        for varname_generic, varname in self._var_dict.items():
             v = self._woa_names[varname_generic] # pylint: disable=invalid-name
 
             self._list_files(dirin=dirin, v=v, freq=freq, grid=grid)
