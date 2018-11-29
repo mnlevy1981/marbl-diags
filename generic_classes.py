@@ -144,7 +144,7 @@ class GenericAnalysisElement(object):
         * variables: variables[var_name] is a list of alternative names for the variable
                      E.g. variables['nitrate'] = ['NO3', 'n_an']
     """
-    def __init__(self, config_key, config_dict, var_dict):
+    def __init__(self, config_key, config_dict, var_dict, is_climo):
         """ construct class object based on config_file_in (YAML format) """
         # Read YAML configuration
         self.logger = logging.getLogger(config_key)
@@ -153,7 +153,7 @@ class GenericAnalysisElement(object):
         self._var_dict = var_dict
         self.collections = None
         self._check()
-        self._open_datasets()
+        self._open_datasets(is_climo)
 
     ####################
     # PRIVATE ROUTINES #
@@ -189,11 +189,11 @@ class GenericAnalysisElement(object):
                                (expected_key, self._config_key))
         # Check for required fields in collections
         for collection in self._config_dict['collections']:
-            for expected_key in ['source', 'open_dataset', 'operations']:
+            for expected_key in ['source', 'open_dataset']:
                 if expected_key not in self._config_dict['collections'][collection]:
                     raise KeyError("Can not find '%s' in '%s' section of collections" %
                                    (expected_key, collection))
         self.logger.info("Contents of %s contain all necessary data", self._config_key)
 
-    def _open_datasets(self):
+    def _open_datasets(self, is_climo):
         pass

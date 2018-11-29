@@ -9,29 +9,53 @@ from generic_classes import GenericAnalysisElement
 
 class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object-inheritance,too-few-public-methods
 
+    def __init__(self, config_key, config_dict, var_dict):
+        """ Determine if operators require monthly climatology """
+        is_climo = False
+
+        # This needs to be preceded (or replaced?) with a consistency check
+        # that ensures that all the operations requested at this level want
+        # the data sources in the collection to be in the same format
+        # E.g. we do not want to combine "plot zonal averages" with "plot
+        # monthly climatology" because reducing the original dataset to zonal
+        # averages would make it impossible to get global data for monthly
+        # climatologies
+        for op in config_dict['operations']:
+            if op in ['plot_state']:
+                is_climo=True
+                break
+
+        super(AnalysisElements, self).__init__(config_key, config_dict, var_dict, is_climo)
+
     ####################
     # PRIVATE ROUTINES #
     ####################
 
-    def _open_datasets(self):
+    def _open_datasets(self, is_climo=False):
         """ Open requested datasets """
         self.collections = dict()
         self._cached_locations = dict()
         self._cached_var_dicts = dict()
         for collection in self._config_dict['collections']:
             self.logger.info("Creating data object for %s in %s", collection, self._config_key)
-            self._cached_locations[collection] = "{}/work/{}.{}.{}".format(
+            if is_climo:
+                climo_str = 'climo'
+            else:
+                climo_str = 'no_climo'
+            self._cached_locations[collection] = "{}/work/{}.{}.{}.{}".format(
                 self._config_dict['dirout'],
                 self._config_key,
                 collection,
+                climo_str,
                 'zarr')
-            self._cached_var_dicts[collection] = "{}/work/{}.{}.json".format(
+            self._cached_var_dicts[collection] = "{}/work/{}.{}.{}.json".format(
                 self._config_dict['dirout'],
                 self._config_key,
-                collection)
+                collection,
+                climo_str)
             if os.path.exists(self._cached_locations[collection]):
                 self.logger.info('Opening %s', self._cached_locations[collection])
-                self.collections[collection] = collection_classes.CachedData(
+                self.collections[collection] = collection_classes.CachedClimoData(
                     data_root=self._cached_locations[collection],
                     var_dict_in=self._cached_var_dicts[collection],
                     data_type='zarr',
@@ -50,26 +74,29 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                     raise ValueError("Unknown source '%s'" %
                                      self._config_dict['collections'][collection]['source'])
             self.logger.info('ds = %s', self.collections[collection].ds)
-        self._operate_on_datasets()
 
-    def _operate_on_datasets(self):
+        # Call any necessary operations on datasets
+        ops_list = []
+        for op in self._config_dict['operations']:
+            if op in ['plot_state']:
+                ops_list.append('compute_mon_climatology')
+        if ops_list:
+            self._operate_on_datasets(ops_list)
+
+    def _operate_on_datasets(self, ops_list):
         """ perform requested operations on datasets """
         for collection in self._config_dict['collections']:
-            if isinstance(self.collections[collection],
-                          collection_classes.CachedData):
-                self.logger.info('No operations for %s, data was cached', collection)
-                continue
-            if not self._config_dict['collections'][collection]['operations']:
-                self.logger.info('No operations requested for %s', collection)
-                continue
-            for op in self._config_dict['collections'][collection]['operations']:
-                self.logger.info('Computing %s', op)
+            for op in ops_list:
+                self.logger.info('Computing %s on %s', op, collection)
                 func = getattr(self.collections[collection], op)
                 func()
                 self.logger.info('ds = %s', self.collections[collection].ds)
+
                 # write to cache
-                self.collections[collection].cache_dataset(self._cached_locations[collection],
-                                                           self._cached_var_dicts[collection])
+                if op == 'compute_mon_climatology':
+                    if not self.collections[collection]._is_climo:
+                        self.collections[collection].cache_dataset(self._cached_locations[collection],
+                                                                   self._cached_var_dicts[collection])
 
     ###################
     # PUBLIC ROUTINES #

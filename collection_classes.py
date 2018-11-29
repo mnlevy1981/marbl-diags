@@ -7,15 +7,16 @@ import json
 import xarray as xr
 from generic_classes import GenericCollection
 
-class CachedData(GenericCollection):
+class CachedClimoData(GenericCollection):
     """ Class built around reading previously-cached data """
     def __init__(self, data_root, var_dict_in, data_type, **kwargs):
         self._var_dict_in = var_dict_in
-        super(CachedData, self).__init__(child_class='CachedData', **kwargs)
+        super(CachedClimoData, self).__init__(child_class='CachedClimoData', **kwargs)
         self._get_dataset(data_root, data_type)
 
     def _get_dataset(self, data_root, data_type):
         self.logger.info('calling _get_dataset, data_type = %s', data_type)
+        self._is_climo = True
         if data_type == 'zarr':
             self.ds = xr.open_zarr(data_root, decode_times=False, decode_coords=False) # pylint: disable=invalid-name
 
@@ -187,6 +188,7 @@ class WOA2013Data(GenericCollection):
                       'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
 
         self.ds = xr.Dataset()
+        self._is_climo = True
         for varname_generic, varname in self._var_dict.items():
             v = self._woa_names[varname_generic] # pylint: disable=invalid-name
 
