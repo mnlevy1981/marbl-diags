@@ -151,9 +151,13 @@ class GenericAnalysisElement(object):
         self._config_dict = config_dict
         self._var_dict = var_dict
         if 'reference' in config_dict:
-          self.reference = config_dict['reference']
+            self.reference = config_dict['reference']
         else:
-          self.reference = None
+            self.reference = None
+        if 'cache_data' in config_dict:
+            self.cache_data = config_dict['cache_data']
+        else:
+            self.cache_data = False
         self.collections = None
         self._check()
         self._open_datasets(is_climo)

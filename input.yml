@@ -16,6 +16,7 @@ CESM2.1_PI-WOA2013-comparison:
       - [200., 600.]
       - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
    reference: WOA2013
+   cache_data: True
    collections:
       b.e21.BW1850.f09_g17.CMIP6-piControl.001: # POP history files from CESM 2.1 control run
          source: cesm
@@ -65,6 +66,7 @@ bats-WOA2013-comparison:
       - [200., 600.]
       - [2000., 5000.]
    reference: WOA2013
+   cache_data: True
    collections:
       g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002: # Matt Long test case
          source: cesm

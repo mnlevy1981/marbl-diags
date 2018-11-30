@@ -53,7 +53,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 self._config_key,
                 collection,
                 climo_str)
-            if os.path.exists(self._cached_locations[collection]):
+            if self.cache_data and os.path.exists(self._cached_locations[collection]):
                 self.logger.info('Opening %s', self._cached_locations[collection])
                 self.collections[collection] = collection_classes.CachedClimoData(
                     data_root=self._cached_locations[collection],
@@ -93,10 +93,11 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 self.logger.info('ds = %s', self.collections[collection].ds)
 
                 # write to cache
-                if op == 'compute_mon_climatology':
-                    if not self.collections[collection]._is_climo:
-                        self.collections[collection].cache_dataset(self._cached_locations[collection],
-                                                                   self._cached_var_dicts[collection])
+                if self.cache_data:
+                    if op == 'compute_mon_climatology':
+                        if not self.collections[collection]._is_climo:
+                            self.collections[collection].cache_dataset(self._cached_locations[collection],
+                                                                       self._cached_var_dicts[collection])
 
     ###################
     # PUBLIC ROUTINES #
