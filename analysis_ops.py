@@ -27,11 +27,10 @@ def plot_climo(AnalysisElement):
 
     # identify reference (if any provided)
     ref_cname = None
-    for cname, collection in AnalysisElement.collections.items():
-        if collection.role == 'reference':
-            if ref_cname:
-                raise ValueError('More that one reference dataset specified')
-            ref_cname = cname
+    if AnalysisElement.reference:
+        for cname in AnalysisElement.collections:
+            if AnalysisElement.reference == cname:
+                ref_cname = cname
     if ref_cname:
         AnalysisElement.logger.info("Reference dataset: '%s'", ref_cname)
     else:

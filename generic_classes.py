@@ -14,7 +14,6 @@ class GenericCollection(object): # pylint: disable=useless-object-inheritance
         if child_class:
             self.logger = logging.getLogger(child_class)
         self._files = None
-        self.role = kwargs['role']
         self.source = kwargs['source']
         self.ds = None # pylint: disable=invalid-name
         self._var_dict = None
@@ -151,6 +150,10 @@ class GenericAnalysisElement(object):
         self._config_key = config_key
         self._config_dict = config_dict
         self._var_dict = var_dict
+        if 'reference' in config_dict:
+          self.reference = config_dict['reference']
+        else:
+          self.reference = None
         self.collections = None
         self._check()
         self._open_datasets(is_climo)
@@ -170,7 +173,6 @@ class GenericAnalysisElement(object):
           variable_list: {{ list of variables to include in analysis (might be derived) }}
           collections:
             collection:
-              role:
               source:
               open_dataset:
 

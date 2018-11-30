@@ -15,9 +15,9 @@ CESM2.1_PI-WOA2013-comparison:
       - 0.
       - [200., 600.]
       - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
+   reference: WOA2013
    collections:
       b.e21.BW1850.f09_g17.CMIP6-piControl.001: # POP history files from CESM 2.1 control run
-         role: model_case
          source: cesm
          open_dataset:
             filetype: hist
@@ -28,7 +28,6 @@ CESM2.1_PI-WOA2013-comparison:
                - 031[7-9]-??
                - 032[0-6]-??
       b.e21.BW1850.f09_g17.CMIP6-piControl.001.tseries: # Same as above, but converted to time series
-         role: model_case
          source: cesm
          open_dataset:
             filetype: single_variable
@@ -37,7 +36,6 @@ CESM2.1_PI-WOA2013-comparison:
             stream: pop.h
             datestr: 031701-032612
       b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology: # Same as above, but climatology computed with pyReshaper
-         role: model_case
          source: cesm
          open_dataset:
             filetype: climo
@@ -46,7 +44,6 @@ CESM2.1_PI-WOA2013-comparison:
             stream: mavg
             datestr: 0317-0326
       WOA2013:
-         role: reference
          source: woa2013
          open_dataset:
             dirin: /glade/work/mclong/woa2013v2
@@ -67,9 +64,9 @@ bats-WOA2013-comparison:
       - 0.
       - [200., 600.]
       - [2000., 5000.]
+   reference: WOA2013
    collections:
       g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002: # Matt Long test case
-         role: model_case
          source: cesm
          open_dataset:
             filetype: hist
@@ -78,7 +75,6 @@ bats-WOA2013-comparison:
             stream: pop.h
             datestr: ????-??
       WOA2013:
-         role: reference
          source: woa2013
          open_dataset:
             dirin: /glade/work/mclong/woa2013v2
