@@ -11,7 +11,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import plottools as pt
 
-def plot_climo(AnalysisElement):
+def plot_climo(AnalysisElement, time_periods=['ANN', 'DJF', 'MAM', 'JJA', 'SON']):
     """ Regardless of data source, generate png """
     # look up grid (move to known grids database)
     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
@@ -19,6 +19,14 @@ def plot_climo(AnalysisElement):
         depth_coord_name = 'z_t'
     else:
         raise ValueError('unknown grid')
+
+    # set up time dimension for averaging
+    time_dims = dict()
+    time_dims['ANN'] = range(0,12)
+    time_dims['DJF'] = [11, 0, 1]
+    time_dims['MAM'] = range(2,5)
+    time_dims['JJA'] = range(5,8)
+    time_dims['SON'] = range(8,11)
 
     # where will plots be written?
     dirout = AnalysisElement._config_dict['dirout']+'/plots'
@@ -48,65 +56,76 @@ def plot_climo(AnalysisElement):
         AnalysisElement.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
                          nrow, ncol, len(cname_list))
 
-        for sel_z in AnalysisElement._config_dict['depth_list']:
+        #-- loop over time periods
+        for time_period in time_periods:
 
-            #-- build indexer for depth
-            if isinstance(sel_z, list): # fragile?
-                is_depth_range = True
-                indexer = {depth_coord_name:slice(sel_z[0], sel_z[1])}
-                depth_str = '{:.0f}-{:.0f}m'.format(sel_z[0], sel_z[1])
-            else:
-                is_depth_range = False
-                indexer = {depth_coord_name: sel_z, 'method': 'nearest'}
-                depth_str = '{:.0f}m'.format(sel_z)
+            for sel_z in AnalysisElement._config_dict['depth_list']:
 
-            #-- name of the plot
-            plot_name = '{}/state-map-{}.{}.{}.png'.format(dirout, AnalysisElement._config_dict['short_name'], v, depth_str)
-            AnalysisElement.logger.info('generating plot: %s', plot_name)
+                #-- build indexer for depth
+                if isinstance(sel_z, list): # fragile?
+                    is_depth_range = True
+                    indexer = {depth_coord_name:slice(sel_z[0], sel_z[1])}
+                    depth_str = '{:.0f}-{:.0f}m'.format(sel_z[0], sel_z[1])
+                else:
+                    is_depth_range = False
+                    indexer = {depth_coord_name: sel_z, 'method': 'nearest'}
+                    depth_str = '{:.0f}m'.format(sel_z)
 
-            #-- generate figure object
-            fig = plt.figure(figsize=(ncol*6,nrow*4))
+                #-- name of the plot
+                plot_name = '{}/state-map-{}.{}.{}.{}.png'.format(dirout,
+                                                                  AnalysisElement._config_dict['short_name'],
+                                                                  v,
+                                                                  depth_str,
+                                                                  time_period)
+                AnalysisElement.logger.info('generating plot: %s', plot_name)
 
-            for i, ds_name in enumerate(cname_list):
+                #-- generate figure object
+                fig = plt.figure(figsize=(ncol*6,nrow*4))
 
-                ds = AnalysisElement.collections[ds_name].ds
-                #-- need to deal with time dimension here....
+                for i, ds_name in enumerate(cname_list):
 
-                # Find appropriate variable name in dataset
-                var_name = AnalysisElement.collections[ds_name]._var_dict[v]
-                if var_name not in ds:
-                    raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
-                field = ds[var_name].sel(**indexer).isel(time=0)
-                AnalysisElement.logger.info('Plotting %s from %s', var_name, ds_name)
+                    ds = AnalysisElement.collections[ds_name].ds
+                    #-- need to deal with time dimension here....
 
-                if is_depth_range:
-                    field = field.mean(depth_coord_name)
+                    # Find appropriate variable name in dataset
+                    var_name = AnalysisElement.collections[ds_name]._var_dict[v]
+                    if var_name not in ds:
+                        raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
+                    if time_period in time_dims:
+                        field = ds[var_name].sel(**indexer).isel(time=time_dims[time_period]).mean('time')
+                    else:
+                        raise KeyError("'%s' is not a known time period" % time_period)
+                    AnalysisElement.logger.info('Plotting %s from %s', var_name, ds_name)
 
-                ax = fig.add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
+                    if is_depth_range:
+                        field = field.mean(depth_coord_name)
 
-                if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
-                    lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
+                    ax = fig.add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
 
-                if v not in AnalysisElement._var_dict:
-                    raise KeyError('{} not defined in variable YAML dict'.format(v))
+                    if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+                        lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
 
-                cf = ax.contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                 levels=AnalysisElement._var_dict[v]['contours']['levels'],
-                                 extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                 cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
-                                 norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
-                land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
-                    'physical','land','110m',
-                    edgecolor='face',
-                    facecolor='gray'))
+                    if v not in AnalysisElement._var_dict:
+                        raise KeyError('{} not defined in variable YAML dict'.format(v))
 
-                ax.set_title(ds_name)
-                ax.set_xlabel('')
-                ax.set_ylabel('')
+                    cf = ax.contourf(lon,lat,field,transform=ccrs.PlateCarree(),
+                                     levels=AnalysisElement._var_dict[v]['contours']['levels'],
+                                     extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                     cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
+                                     norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
+                    del(field)
+                    land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
+                        'physical','land','110m',
+                        edgecolor='face',
+                        facecolor='gray'))
 
-            fig.subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
-            cax = plt.axes((0.93, 0.15, 0.02, 0.7))
-            fig.colorbar(cf, cax=cax)
+                    ax.set_title(ds_name)
+                    ax.set_xlabel('')
+                    ax.set_ylabel('')
 
-            fig.savefig(plot_name, bbox_inches='tight', dpi=300)
-            plt.close(fig)
+                fig.subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
+                cax = plt.axes((0.93, 0.15, 0.02, 0.7))
+                fig.colorbar(cf, cax=cax)
+
+                fig.savefig(plot_name, bbox_inches='tight', dpi=300)
+                plt.close(fig)
