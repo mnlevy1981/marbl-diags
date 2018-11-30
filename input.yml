@@ -5,7 +5,7 @@ CESM2.1_PI-WOA2013-comparison:
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:
-      - plot_state
+      - plot_climo
    variable_list:
       - nitrate
       - phosphate
@@ -59,7 +59,7 @@ bats-WOA2013-comparison:
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:
-      - plot_state
+      - plot_climo
    variable_list:
       - nitrate
       - phosphate

@@ -21,7 +21,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         # averages would make it impossible to get global data for monthly
         # climatologies
         for op in config_dict['operations']:
-            if op in ['plot_state']:
+            if 'climo' in op:
                 is_climo=True
                 break
 
@@ -78,7 +78,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         # Call any necessary operations on datasets
         ops_list = []
         for op in self._config_dict['operations']:
-            if op in ['plot_state']:
+            if op in ['plot_climo']:
                 ops_list.append('compute_mon_climatology')
         if ops_list:
             self._operate_on_datasets(ops_list)

@@ -11,7 +11,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import plottools as pt
 
-def plot_state(AnalysisElement):
+def plot_climo(AnalysisElement):
     """ Regardless of data source, generate png """
     # look up grid (move to known grids database)
     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
