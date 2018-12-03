@@ -109,4 +109,4 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
             self.logger.info('Calling %s for %s', op, self._config_key)
             module = importlib.import_module('analysis_ops')
             func = getattr(module, op)
-            func(self)
+            func(self, self._config_dict)

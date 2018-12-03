@@ -175,6 +175,7 @@ class GenericAnalysisElement(object):
           source: {{ module_for_compute }}
           operations: {{ List of methods of form: ? = func(collection,collections)}}
           variable_list: {{ list of variables to include in analysis (might be derived) }}
+          [ climo_time_periods: {{ list of climatological time periods to plot (e.g. ANN, DJF, etc) }} ]
           collections:
             collection:
               source:
@@ -186,6 +187,11 @@ class GenericAnalysisElement(object):
         """
         if not self._config_dict:
             raise ValueError("configuration dictionary is empty")
+        if not isinstance(self._config_dict, dict):
+            raise TypeError("configuration dictionary is not a dictionary")
+
+        if 'climo_time_periods' not in self._config_dict:
+            self._config_dict['climo_time_periods'] = ['DJF', 'MAM', 'JJA', 'SON', 'ANN']
 
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element

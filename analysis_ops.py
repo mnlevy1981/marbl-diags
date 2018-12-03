@@ -11,7 +11,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import plottools as pt
 
-def plot_climo(AnalysisElement, time_periods=['ANN', 'DJF', 'MAM', 'JJA', 'SON']):
+def plot_climo(AnalysisElement, config_dict):
     """ Regardless of data source, generate png """
     # look up grid (move to known grids database)
     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
@@ -57,7 +57,7 @@ def plot_climo(AnalysisElement, time_periods=['ANN', 'DJF', 'MAM', 'JJA', 'SON']
                          nrow, ncol, len(cname_list))
 
         #-- loop over time periods
-        for time_period in time_periods:
+        for time_period in config_dict['climo_time_periods']:
 
             for sel_z in AnalysisElement._config_dict['depth_list']:
 

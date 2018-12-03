@@ -58,6 +58,8 @@ bats-WOA2013-comparison:
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:
       - plot_climo
+   climo_time_periods:
+      - ANN
    variable_list:
       - nitrate
       - phosphate
