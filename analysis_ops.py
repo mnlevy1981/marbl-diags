@@ -34,27 +34,29 @@ def plot_climo(AnalysisElement, config_dict):
         call(['mkdir', '-p', dirout])
 
     # identify reference (if any provided)
-    ref_cname = None
+    ref_data_source_name = None
     if AnalysisElement.reference:
-        for cname in AnalysisElement.collections:
-            if AnalysisElement.reference == cname:
-                ref_cname = cname
-    if ref_cname:
-        AnalysisElement.logger.info("Reference dataset: '%s'", ref_cname)
+        for data_source_name in AnalysisElement.data_sources:
+            if AnalysisElement.reference == data_source_name:
+                ref_data_source_name = data_source_name
+    if ref_data_source_name:
+        AnalysisElement.logger.info("Reference dataset: '%s'", ref_data_source_name)
     else:
         AnalysisElement.logger.info("No reference dataset specified")
 
     #-- loop over datasets
-    cname_list = AnalysisElement.collections.keys()
-    if ref_cname:
-        cname_list = [ref_cname] + [cname for cname in cname_list if cname != ref_cname]
+    data_source_name_list = AnalysisElement.data_sources.keys()
+    if ref_data_source_name:
+        data_source_name_list = [ref_data_source_name] + \
+                                [data_source_name for data_source_name in data_source_name_list
+                                    if data_source_name != ref_data_source_name]
 
     #-- loop over variables
     for v in AnalysisElement._config_dict['variable_list']:
 
-        nrow, ncol = pt.get_plot_dims(len(cname_list))
+        nrow, ncol = pt.get_plot_dims(len(data_source_name_list))
         AnalysisElement.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
-                         nrow, ncol, len(cname_list))
+                         nrow, ncol, len(data_source_name_list))
 
         #-- loop over time periods
         for time_period in config_dict['climo_time_periods']:
@@ -82,13 +84,13 @@ def plot_climo(AnalysisElement, config_dict):
                 #-- generate figure object
                 fig = plt.figure(figsize=(ncol*6,nrow*4))
 
-                for i, ds_name in enumerate(cname_list):
+                for i, ds_name in enumerate(data_source_name_list):
 
-                    ds = AnalysisElement.collections[ds_name].ds
+                    ds = AnalysisElement.data_sources[ds_name].ds
                     #-- need to deal with time dimension here....
 
                     # Find appropriate variable name in dataset
-                    var_name = AnalysisElement.collections[ds_name]._var_dict[v]
+                    var_name = AnalysisElement.data_sources[ds_name]._var_dict[v]
                     if var_name not in ds:
                         raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
                     if time_period in time_dims:

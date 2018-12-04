@@ -1,13 +1,13 @@
-""" These classes build on GenericCollection to open data from specific sources """
+""" These classes build on GenericDataSource to open data from specific sources """
 
 import glob
 import logging
 import os
 import json
 import xarray as xr
-from generic_classes import GenericCollection
+from generic_classes import GenericDataSource
 
-class CachedClimoData(GenericCollection):
+class CachedClimoData(GenericDataSource):
     """ Class built around reading previously-cached data """
     def __init__(self, data_root, var_dict_in, data_type, **kwargs):
         self._var_dict_in = var_dict_in
@@ -33,7 +33,7 @@ class CachedClimoData(GenericCollection):
         """ Cached data should already be climatology """
         pass
 
-class CESMData(GenericCollection):
+class CESMData(GenericDataSource):
     """ Class built around reading CESM history files """
     def __init__(self, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
@@ -133,7 +133,7 @@ class CESMData(GenericCollection):
             raise ValueError('Uknown format: %s' % filetype)
 
         #-- do unit conversions belong here?
-        # maybe there should be a "conform_collections" method?
+        # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
             self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
@@ -157,7 +157,7 @@ class CESMData(GenericCollection):
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
 
-class WOA2013Data(GenericCollection):
+class WOA2013Data(GenericDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, var_dict, **kwargs):
         super(WOA2013Data, self).__init__(child_class='WOA2013Data', **kwargs)

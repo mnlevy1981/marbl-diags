@@ -1,10 +1,10 @@
 """
 The AnalysisElements class adds source-specific methods for opening or operating
-on collections of data."""
+on data_sources of data."""
 
 import os
 import importlib
-import collection_classes
+import data_source_classes
 from generic_classes import GenericAnalysisElement
 
 class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object-inheritance,too-few-public-methods
@@ -33,47 +33,47 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
 
     def _open_datasets(self, is_climo=False):
         """ Open requested datasets """
-        self.collections = dict()
+        self.data_sources = dict()
         self._cached_locations = dict()
         self._cached_var_dicts = dict()
-        for collection in self._config_dict['collections']:
-            self.logger.info("Creating data object for %s in %s", collection, self._config_key)
+        for data_source in self._config_dict['data_sources']:
+            self.logger.info("Creating data object for %s in %s", data_source, self._config_key)
             if is_climo:
                 climo_str = 'climo'
             else:
                 climo_str = 'no_climo'
-            self._cached_locations[collection] = "{}/work/{}.{}.{}.{}".format(
+            self._cached_locations[data_source] = "{}/work/{}.{}.{}.{}".format(
                 self._config_dict['dirout'],
                 self._config_key,
-                collection,
+                data_source,
                 climo_str,
                 'zarr')
-            self._cached_var_dicts[collection] = "{}/work/{}.{}.{}.json".format(
+            self._cached_var_dicts[data_source] = "{}/work/{}.{}.{}.json".format(
                 self._config_dict['dirout'],
                 self._config_key,
-                collection,
+                data_source,
                 climo_str)
-            if self.cache_data and os.path.exists(self._cached_locations[collection]):
-                self.logger.info('Opening %s', self._cached_locations[collection])
-                self.collections[collection] = collection_classes.CachedClimoData(
-                    data_root=self._cached_locations[collection],
-                    var_dict_in=self._cached_var_dicts[collection],
+            if self.cache_data and os.path.exists(self._cached_locations[data_source]):
+                self.logger.info('Opening %s', self._cached_locations[data_source])
+                self.data_sources[data_source] = data_source_classes.CachedClimoData(
+                    data_root=self._cached_locations[data_source],
+                    var_dict_in=self._cached_var_dicts[data_source],
                     data_type='zarr',
-                    **self._config_dict['collections'][collection])
+                    **self._config_dict['data_sources'][data_source])
             else:
                 self.logger.info('Opening %s',
-                                 self._config_dict['collections'][collection]['source'])
-                if self._config_dict['collections'][collection]['source'] == 'cesm':
-                    self.collections[collection] = collection_classes.CESMData(
-                        **self._config_dict['collections'][collection])
-                elif self._config_dict['collections'][collection]['source'] == 'woa2013':
-                    self.collections[collection] = collection_classes.WOA2013Data(
+                                 self._config_dict['data_sources'][data_source]['source'])
+                if self._config_dict['data_sources'][data_source]['source'] == 'cesm':
+                    self.data_sources[data_source] = data_source_classes.CESMData(
+                        **self._config_dict['data_sources'][data_source])
+                elif self._config_dict['data_sources'][data_source]['source'] == 'woa2013':
+                    self.data_sources[data_source] = data_source_classes.WOA2013Data(
                         var_dict=self._var_dict,
-                        **self._config_dict['collections'][collection])
+                        **self._config_dict['data_sources'][data_source])
                 else:
                     raise ValueError("Unknown source '%s'" %
-                                     self._config_dict['collections'][collection]['source'])
-            self.logger.info('ds = %s', self.collections[collection].ds)
+                                     self._config_dict['data_sources'][data_source]['source'])
+            self.logger.info('ds = %s', self.data_sources[data_source].ds)
 
         # Call any necessary operations on datasets
         ops_list = []
@@ -85,19 +85,19 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
 
     def _operate_on_datasets(self, ops_list):
         """ perform requested operations on datasets """
-        for collection in self._config_dict['collections']:
+        for data_source in self._config_dict['data_sources']:
             for op in ops_list:
-                self.logger.info('Computing %s on %s', op, collection)
-                func = getattr(self.collections[collection], op)
+                self.logger.info('Computing %s on %s', op, data_source)
+                func = getattr(self.data_sources[data_source], op)
                 func()
-                self.logger.info('ds = %s', self.collections[collection].ds)
+                self.logger.info('ds = %s', self.data_sources[data_source].ds)
 
                 # write to cache
                 if self.cache_data:
                     if op == 'compute_mon_climatology':
-                        if not self.collections[collection]._is_climo:
-                            self.collections[collection].cache_dataset(self._cached_locations[collection],
-                                                                       self._cached_var_dicts[collection])
+                        if not self.data_sources[data_source]._is_climo:
+                            self.data_sources[data_source].cache_dataset(self._cached_locations[data_source],
+                                                                       self._cached_var_dicts[data_source])
 
     ###################
     # PUBLIC ROUTINES #

@@ -8,7 +8,7 @@ from datetime import datetime
 import cftime
 import xarray as xr
 
-class GenericCollection(object): # pylint: disable=useless-object-inheritance
+class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     """ Class containing functions used regardless of data source """
     def __init__(self, child_class=None, **kwargs):
         if child_class:
@@ -130,7 +130,7 @@ class GenericCollection(object): # pylint: disable=useless-object-inheritance
 
     def _set_var_dict(self):
         """
-        Each class derived from GenericCollection needs to map from generic variable names to
+        Each class derived from GenericDataSource needs to map from generic variable names to
         model-specific variable names.
         """
         raise NotImplementedError('_set_var_dict needs to be defined in child classes')
@@ -158,7 +158,7 @@ class GenericAnalysisElement(object):
             self.cache_data = config_dict['cache_data']
         else:
             self.cache_data = False
-        self.collections = None
+        self.data_sources = None
         self._check()
         self._open_datasets(is_climo)
 
@@ -173,17 +173,17 @@ class GenericAnalysisElement(object):
           description: {{ description_text }}
           dirout: {{ path_to_save_temp_files }}
           source: {{ module_for_compute }}
-          operations: {{ List of methods of form: ? = func(collection,collections)}}
+          operations: {{ List of methods of form: ? = func(data_source,data_sources)}}
           variable_list: {{ list of variables to include in analysis (might be derived) }}
           [ climo_time_periods: {{ list of climatological time periods to plot (e.g. ANN, DJF, etc) }} ]
-          collections:
-            collection:
+          data_sources:
+            data_source:
               source:
               open_dataset:
 
 
-        collections: is a collection of datasets;
-        collection: stores attributes of the collection, specified in the yaml file.
+        data_sources: a collection of data_sources;
+        data_source: stores attributes of the data_source, specified in the yaml file.
         """
         if not self._config_dict:
             raise ValueError("configuration dictionary is empty")
@@ -195,16 +195,16 @@ class GenericAnalysisElement(object):
 
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element
-        for expected_key in ['dirout', 'source', 'collections', 'operations']:
+        for expected_key in ['dirout', 'source', 'data_sources', 'operations']:
             if  expected_key not in self._config_dict:
                 raise KeyError("Can not find '%s' in '%s' section of configuration" %
                                (expected_key, self._config_key))
-        # Check for required fields in collections
-        for collection in self._config_dict['collections']:
+        # Check for required fields in data_sources
+        for data_source in self._config_dict['data_sources']:
             for expected_key in ['source', 'open_dataset']:
-                if expected_key not in self._config_dict['collections'][collection]:
-                    raise KeyError("Can not find '%s' in '%s' section of collections" %
-                                   (expected_key, collection))
+                if expected_key not in self._config_dict['data_sources'][data_source]:
+                    raise KeyError("Can not find '%s' in '%s' section of data_sources" %
+                                   (expected_key, data_source))
         self.logger.info("Contents of %s contain all necessary data", self._config_key)
 
     def _open_datasets(self, is_climo):
