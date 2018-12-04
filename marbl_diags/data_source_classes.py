@@ -5,7 +5,7 @@ import logging
 import os
 import json
 import xarray as xr
-from generic_classes import GenericDataSource
+from .generic_classes import GenericDataSource
 
 class CachedClimoData(GenericDataSource):
     """ Class built around reading previously-cached data """

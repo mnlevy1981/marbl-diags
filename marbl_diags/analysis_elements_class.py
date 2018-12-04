@@ -4,8 +4,8 @@ on data_sources of data."""
 
 import os
 import importlib
-import data_source_classes
-from generic_classes import GenericAnalysisElement
+from . import data_source_classes
+from .generic_classes import GenericAnalysisElement
 
 class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object-inheritance,too-few-public-methods
 
