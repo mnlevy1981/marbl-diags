@@ -3,7 +3,7 @@
 
 import logging
 import yaml
-import analysis_elements_class
+from marbl_diags import analysis_elements_class
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(levelname)s (%(funcName)s): %(message)s', level=logging.DEBUG)
