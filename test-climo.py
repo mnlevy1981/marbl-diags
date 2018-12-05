@@ -3,6 +3,7 @@
 A script that does some basic unit testing on compute_mon_climatology()
 """
 
+import sys
 import xarray as xr
 import numpy as np
 from marbl_diags import generic_classes
@@ -14,7 +15,7 @@ class UnitTestDataSource(generic_classes.GenericDataSource):
         super(UnitTestDataSource, self).__init__(child_class='unit_test', source='memory')
         self._test_names = []
         self._test_results = []
-        self._fail_cnt = 0
+        self.fail_cnt = 0
 
     def _set_var_dict(self):
         pass
@@ -24,7 +25,7 @@ class UnitTestDataSource(generic_classes.GenericDataSource):
             result = 'PASS'
         else:
             result = 'FAIL'
-            self._fail_cnt += 1
+            self.fail_cnt += 1
         self._test_results.append(result)
 
     def create_data_set(self):
@@ -71,8 +72,10 @@ class UnitTestDataSource(generic_classes.GenericDataSource):
         """ print unit test results to screen """
         for n, (name, result) in enumerate(zip(self._test_names, self._test_results)):
             print('Test {} ({}): {}'.format(n+1, name, result))
-        print('{} test failure(s)'.format(self._fail_cnt))
+        print('{} test failure(s)'.format(self.fail_cnt))
 
 data_source = UnitTestDataSource()
 data_source.unit_tests()
 data_source.print_test_results()
+
+sys.exit(min(data_source.fail_cnt,1))
