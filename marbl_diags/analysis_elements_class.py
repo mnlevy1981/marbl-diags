@@ -3,8 +3,8 @@ The AnalysisElements class adds source-specific methods for opening or operating
 on data_sources of data."""
 
 import os
-import importlib
 from . import data_source_classes
+from . import analysis_ops
 from .generic_classes import GenericAnalysisElement
 
 class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object-inheritance,too-few-public-methods
@@ -107,6 +107,5 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         """ Perform requested analysis operations on each dataset """
         for op in self._config_dict['operations']:
             self.logger.info('Calling %s for %s', op, self._config_key)
-            module = importlib.import_module('analysis_ops')
-            func = getattr(module, op)
+            func = getattr(analysis_ops, op)
             func(self, self._config_dict)

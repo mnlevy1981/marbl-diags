@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-import plottools as pt
+from . import plottools as pt
 
 def plot_climo(AnalysisElement, config_dict):
     """ Regardless of data source, generate png """
