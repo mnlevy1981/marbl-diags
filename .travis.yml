@@ -27,11 +27,11 @@ install:
 
   - conda create -q -n marbl-diags python=$TRAVIS_PYTHON_VERSION
   - source activate marbl-diags
-  - conda update -q -f conda-env.yml
+  - conda env update -q -f conda-env.yml
   - git clone https://github.com/NCAR/esmlab.git esmlab
   - cd esmlab
   # - git checkout ... [maybe include a tag or specific commit?]
-  - python setup.py install
+  - python setup.py develop
   - cd ..
 #  - python setup.py install
 
