@@ -8,7 +8,6 @@ dependencies:
    - xarray
    - matplotlib
    - cartopy
-   - cftime
    - pyyaml
    - zarr
    - netcdf4

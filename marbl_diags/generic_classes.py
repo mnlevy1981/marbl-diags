@@ -5,8 +5,6 @@ import os
 import json
 from subprocess import call
 from datetime import datetime
-import cftime
-import xarray as xr
 import esmlab
 
 class GenericDataSource(object): # pylint: disable=useless-object-inheritance
