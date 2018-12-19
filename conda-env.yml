@@ -1,0 +1,13 @@
+name: marbl-diags
+channels:
+   - conda-forge
+   - default
+dependencies:
+   - numpy
+   - dask
+   - xarray
+   - matplotlib
+   - cartopy
+   - pyyaml
+   - zarr
+   - netcdf4

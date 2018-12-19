@@ -5,8 +5,7 @@ import os
 import json
 from subprocess import call
 from datetime import datetime
-import cftime
-import xarray as xr
+import esmlab
 
 class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     """ Class containing functions used regardless of data source """
@@ -26,42 +25,7 @@ class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     def compute_mon_climatology(self):
         """ Compute a monthly climatology """
 
-        tb_name, tb_dim = self._time_bound_var()
-
-        grid_vars = [v for v in self.ds.variables if 'time' not in self.ds[v].dims]
-
-        # save attrs
-        attrs = {v:self.ds[v].attrs for v in self.ds.variables}
-        encoding = {v:{key:val for key, val in self.ds[v].encoding.items()
-                       if key in ['dtype', '_FillValue', 'missing_value']}
-                    for v in self.ds.variables}
-
-        #-- compute time variable
-        date = cftime.num2date(self.ds[tb_name].mean(tb_dim),
-                               units=self.ds.time.attrs['units'],
-                               calendar=self.ds.time.attrs['calendar'])
-        self.ds.time.values = date
-        if len(date)%12 != 0:
-            raise ValueError('Time axis not evenly divisible by 12!')
-
-        #-- compute climatology
-        ds = self.ds.drop(grid_vars).groupby('time.month').mean('time').rename({'month':'time'})
-
-        #-- put grid_vars back
-        ds = xr.merge((ds, self.ds.drop([v for v in self.ds.variables if v not in grid_vars])))
-
-        attrs['time'] = {'long_name':'Month', 'units':'month'}
-        del encoding['time']
-
-        # put the attributes back
-        for v in ds.variables:
-            ds[v].attrs = attrs[v]
-
-        # put the encoding back
-        for v in ds.variables:
-            if v in encoding:
-                ds[v].encoding = encoding[v]
-
+        ds = esmlab.climatology.compute_mon_climatology(self.ds)
         self.ds = ds
 
     def cache_dataset(self, cached_location, cached_var_dict):
