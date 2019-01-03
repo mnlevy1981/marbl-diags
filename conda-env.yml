@@ -11,3 +11,5 @@ dependencies:
    - pyyaml
    - zarr
    - netcdf4
+   - pyyaml
+   - esmlab
