@@ -30,7 +30,7 @@ nitrate:
          - 38
          - 42
       midpoint: 2
-      extend: max
+      extend: both
       cmap: PRGn
 phosphate:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
