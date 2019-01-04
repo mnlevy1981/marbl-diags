@@ -135,7 +135,8 @@ class GenericAnalysisElement(object):
         Configuration file must be laid out as follows.
         analysis_element:
           description: {{ description_text }}
-          dirout: {{ path_to_save_temp_files }}
+          dirout: {{ path_to_write_plot_files }}
+          cache_dir: {{ path_to_save_cached_data }}
           source: {{ module_for_compute }}
           operations: {{ List of methods of form: ? = func(data_source,data_sources)}}
           variable_list: {{ list of variables to include in analysis (might be derived) }}
@@ -159,7 +160,7 @@ class GenericAnalysisElement(object):
 
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element
-        for expected_key in ['dirout', 'source', 'data_sources', 'operations']:
+        for expected_key in ['dirout', 'cache_dir', 'source', 'data_sources', 'operations']:
             if  expected_key not in self._config_dict:
                 raise KeyError("Can not find '%s' in '%s' section of configuration" %
                                (expected_key, self._config_key))

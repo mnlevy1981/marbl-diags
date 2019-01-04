@@ -42,14 +42,14 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 climo_str = 'climo'
             else:
                 climo_str = 'no_climo'
-            self._cached_locations[data_source] = "{}/work/{}.{}.{}.{}".format(
-                self._config_dict['dirout'],
+            self._cached_locations[data_source] = "{}/{}.{}.{}.{}".format(
+                self._config_dict['cache_dir'],
                 self._config_key,
                 data_source,
                 climo_str,
                 'zarr')
-            self._cached_var_dicts[data_source] = "{}/work/{}.{}.{}.json".format(
-                self._config_dict['dirout'],
+            self._cached_var_dicts[data_source] = "{}/{}.{}.{}.json".format(
+                self._config_dict['cache_dir'],
                 self._config_key,
                 data_source,
                 climo_str)

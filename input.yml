@@ -1,7 +1,8 @@
 CESM2.1_PI-WOA2013-comparison:
    short_name: cesm2.1
    description: Comparing the CESM 2.1 preindustrial control to WOA2013
-   dirout: /glade/scratch/mlevy/marbl-diag-out
+   dirout: /glade/scratch/mlevy/marbl-diag-out/plots
+   cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:
@@ -36,7 +37,7 @@ CESM2.1_PI-WOA2013-comparison:
             case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
             stream: pop.h
             datestr: 031701-032612
-      b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology: # Same as above, but climatology computed with pyReshaper
+      b.e21.BW1850.f09_g17.CMIP6-piControl.001.mon_climatology: # Same as above, but climatology computed with pyReshaper
          source: cesm
          open_dataset:
             filetype: climo
@@ -53,7 +54,8 @@ CESM2.1_PI-WOA2013-comparison:
 bats-WOA2013-comparison:
    short_name: hot_bats_13c
    description: Comparing Matt's hot_bats_13c to WOA
-   dirout: /glade/scratch/mlevy/marbl-diag-out
+   dirout: /glade/scratch/mlevy/marbl-diag-out/plots
+   cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:

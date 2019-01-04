@@ -29,9 +29,8 @@ def plot_climo(AnalysisElement, config_dict):
     time_dims['SON'] = range(8,11)
 
     # where will plots be written?
-    dirout = AnalysisElement._config_dict['dirout']+'/plots'
-    if not os.path.exists(dirout):
-        call(['mkdir', '-p', dirout])
+    if not os.path.exists(AnalysisElement._config_dict['dirout']):
+        call(['mkdir', '-p', AnalysisElement._config_dict['dirout']])
 
     # identify reference (if any provided)
     ref_data_source_name = None
@@ -74,7 +73,7 @@ def plot_climo(AnalysisElement, config_dict):
                     depth_str = '{:.0f}m'.format(sel_z)
 
                 #-- name of the plot
-                plot_name = '{}/state-map-{}.{}.{}.{}.png'.format(dirout,
+                plot_name = '{}/state-map-{}.{}.{}.{}.png'.format(AnalysisElement._config_dict['dirout'],
                                                                   AnalysisElement._config_dict['short_name'],
                                                                   v,
                                                                   depth_str,
