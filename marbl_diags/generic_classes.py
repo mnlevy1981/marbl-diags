@@ -160,7 +160,10 @@ class GenericAnalysisElement(object):
 
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element
-        for expected_key in ['dirout', 'cache_dir', 'source', 'data_sources', 'operations']:
+        if not self.cache_data:
+            self._config_dict['cache_dir'] = None
+        expected_keys = ['dirout', 'cache_dir', 'source', 'data_sources', 'operations']
+        for expected_key in expected_keys:
             if  expected_key not in self._config_dict:
                 raise KeyError("Can not find '%s' in '%s' section of configuration" %
                                (expected_key, self._config_key))
