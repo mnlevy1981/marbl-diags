@@ -11,7 +11,37 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from . import plottools as pt
 
-def plot_climo(AnalysisElement, config_dict):
+def plot_ann_climo(AnalysisElement, config_dict):
+    """ Regardless of data source, generate png based on annual climatology"""
+    # set up time dimension for averaging
+    valid_time_dims = dict()
+    for ds_name, data_source in AnalysisElement.data_sources.items():
+        # 1. data source needs time dimension of 1 or 12
+        if data_source.ds.dims['time'] not in [1, 12]:
+            raise ValueError("Dataset '{}' must have time dimension of 1 or 12".format(ds_name))
+        # 2. set up averages to reflect proper dimensions
+        valid_time_dims[ds_name] = dict()
+        valid_time_dims[ds_name]['ANN'] = range(0,data_source.ds.dims['time'])
+    _plot_climo(AnalysisElement, config_dict, valid_time_dims)
+
+def plot_mon_climo(AnalysisElement, config_dict):
+    """ Regardless of data source, generate png based on monthly climatology"""
+    # set up time dimension for averaging
+    valid_time_dims = dict()
+    for ds_name, data_source in AnalysisElement.data_sources.items():
+        # 1. data source needs time dimension of 12
+        if data_source.ds.dims['time'] != 12:
+            raise ValueError("Dataset '{}' must have time dimension of 12".format(ds_name))
+        # 2. set up averages to reflect proper dimensions
+        valid_time_dims[ds_name] = dict()
+        valid_time_dims[ds_name]['ANN'] = range(0,12)
+        valid_time_dims[ds_name]['DJF'] = [11, 0, 1]
+        valid_time_dims[ds_name]['MAM'] = range(2,5)
+        valid_time_dims[ds_name]['JJA'] = range(5,8)
+        valid_time_dims[ds_name]['SON'] = range(8,11)
+    _plot_climo(AnalysisElement, config_dict, valid_time_dims)
+
+def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
     """ Regardless of data source, generate png """
     # look up grid (move to known grids database)
     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
@@ -19,14 +49,6 @@ def plot_climo(AnalysisElement, config_dict):
         depth_coord_name = 'z_t'
     else:
         raise ValueError('unknown grid')
-
-    # set up time dimension for averaging
-    time_dims = dict()
-    time_dims['ANN'] = range(0,12)
-    time_dims['DJF'] = [11, 0, 1]
-    time_dims['MAM'] = range(2,5)
-    time_dims['JJA'] = range(5,8)
-    time_dims['SON'] = range(8,11)
 
     # where will plots be written?
     if not os.path.exists(AnalysisElement._config_dict['dirout']):
@@ -92,10 +114,10 @@ def plot_climo(AnalysisElement, config_dict):
                     var_name = AnalysisElement.data_sources[ds_name]._var_dict[v]
                     if var_name not in ds:
                         raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
-                    if time_period in time_dims:
-                        field = ds[var_name].sel(**indexer).isel(time=time_dims[time_period]).mean('time')
+                    if time_period in valid_time_dims[ds_name]:
+                        field = ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
                     else:
-                        raise KeyError("'%s' is not a known time period" % time_period)
+                        raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
                     AnalysisElement.logger.info('Plotting %s from %s', var_name, ds_name)
 
                     if is_depth_range:

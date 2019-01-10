@@ -155,9 +155,6 @@ class GenericAnalysisElement(object):
         if not isinstance(self._config_dict, dict):
             raise TypeError("configuration dictionary is not a dictionary")
 
-        if 'climo_time_periods' not in self._config_dict:
-            self._config_dict['climo_time_periods'] = ['DJF', 'MAM', 'JJA', 'SON', 'ANN']
-
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element
         if not self.cache_data:

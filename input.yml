@@ -1,12 +1,12 @@
-CESM2.1_PI-WOA2013-comparison:
-   short_name: cesm2.1
+CESM2.1_PI-WOA2013-ann-comparison:
+   short_name: ann_cesm2.1
    description: Comparing the CESM 2.1 preindustrial control to WOA2013
    dirout: /glade/scratch/mlevy/marbl-diag-out/plots
    cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:
-      - plot_climo
+      - plot_ann_climo
    variable_list:
       - nitrate
       - phosphate
@@ -37,13 +37,21 @@ CESM2.1_PI-WOA2013-comparison:
             case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
             stream: pop.h
             datestr: 031701-032612
-      b.e21.BW1850.f09_g17.CMIP6-piControl.001.mon_climatology: # Same as above, but climatology computed with pyReshaper
+      b.e21.BW1850.f09_g17.CMIP6-piControl.001.mon_climatology: # Same as above, but mon climatology computed with pyReshaper
          source: cesm
          open_dataset:
-            filetype: climo
+            filetype: mon_climo
             dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo
             case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
             stream: mavg
+            datestr: 0317-0326
+      b.e21.BW1850.f09_g17.CMIP6-piControl.001.ann_climatology: # Same as above, but ann climatology computed with pyReshaper
+         source: cesm
+         open_dataset:
+            filetype: ann_climo
+            dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo
+            case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
+            stream: tavg
             datestr: 0317-0326
       WOA2013:
          source: woa2013
@@ -59,9 +67,11 @@ bats-WOA2013-comparison:
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    operations:
-      - plot_climo
+      - plot_mon_climo
    climo_time_periods:
       - ANN
+      - DJF
+      - JJA
    variable_list:
       - nitrate
       - phosphate

@@ -16,7 +16,8 @@ class CachedClimoData(GenericDataSource):
 
     def _get_dataset(self, data_root, data_type):
         self.logger.info('calling _get_dataset, data_type = %s', data_type)
-        self._is_climo = True
+        self._is_ann_climo = False
+        self._is_mon_climo = True
         if data_type == 'zarr':
             self.ds = xr.open_zarr(data_root, decode_times=False, decode_coords=False) # pylint: disable=invalid-name
 
@@ -41,7 +42,7 @@ class CESMData(GenericDataSource):
 
     def compute_mon_climatology(self):
         """ Compute monthly climatology (if necessary) """
-        if self._is_climo:
+        if self._is_mon_climo or self._is_ann_climo:
             return
         super(CESMData, self).compute_mon_climatology()
 
@@ -53,7 +54,8 @@ class CESMData(GenericDataSource):
 
         if filetype == 'hist':
 
-            self._is_climo = False
+            self._is_ann_climo = False
+            self._is_mon_climo = False
             file_name_pattern = []
             for date_str in datestr:
                 file_name_pattern.append('{}/{}.{}.{}.nc'.format(dirin, case, stream, date_str))
@@ -84,9 +86,14 @@ class CESMData(GenericDataSource):
             self.logger.debug('dropping vars: %s', drop_vars)
             self.ds = self.ds.drop(drop_vars)
 
-        elif filetype == 'climo':
+        elif filetype in ['mon_climo', 'ann_climo']:
 
-            self._is_climo = True
+            if filetype == 'mon_climo':
+                self._is_ann_climo = False
+                self._is_mon_climo = True
+            else:
+                self._is_ann_climo = True
+                self._is_mon_climo = False
             file_name_pattern = []
             for date_str in datestr:
                 file_name_pattern.append('{}/{}.{}.nc'.format(dirin, stream, date_str))
@@ -119,7 +126,8 @@ class CESMData(GenericDataSource):
 
         elif filetype == 'single_variable':
 
-            self._is_climo = False
+            self._is_ann_climo = False
+            self._is_mon_climo = False
             self.ds = xr.Dataset()
             for variable in self._var_dict.values():
                 file_name_pattern = []
@@ -188,7 +196,8 @@ class WOA2013Data(GenericDataSource):
                       'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
 
         self.ds = xr.Dataset()
-        self._is_climo = True
+        self._is_ann_climo = False
+        self._is_mon_climo = True
         for varname_generic, varname in self._var_dict.items():
             v = self._woa_names[varname_generic] # pylint: disable=invalid-name
 
