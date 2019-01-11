@@ -104,6 +104,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
 
                 #-- generate figure object
                 fig = plt.figure(figsize=(ncol*6,nrow*4))
+                fig.suptitle("{} at {}m".format(v, sel_z))
 
                 for i, ds_name in enumerate(data_source_name_list):
 
@@ -136,13 +137,24 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                                      extend=AnalysisElement._var_dict[v]['contours']['extend'],
                                      cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
                                      norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
-                    del(field)
+
                     land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
                         'physical','land','110m',
                         edgecolor='face',
                         facecolor='gray'))
 
-                    ax.set_title(ds_name)
+                    # Get stats (probably refactor this at some point)
+                    fmin = np.nanmin(field)
+                    fmax = np.nanmax(field)
+                    # FIXME: compute mean (area-weighted) and RMS (use emslab?)
+                    fmean = 'TBD'
+                    fRMS = 'TBD'
+                    del(field)
+                    if AnalysisElement._config_dict['stats_in_title']:
+                        ax.set_title("{}\nMin: {:.2f}, Max: {:.2f}, Mean: {}, RMS: {}".format(
+                             ds_name, fmin, fmax, fmean, fRMS))
+                    else:
+                        ax.set_title(ds_name)
                     ax.set_xlabel('')
                     ax.set_ylabel('')
 

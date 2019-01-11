@@ -109,19 +109,21 @@ class GenericAnalysisElement(object):
     """
     def __init__(self, config_key, config_dict, var_dict, is_climo):
         """ construct class object based on config_file_in (YAML format) """
+        # Set default values for _config_dict
+        defaults = dict()
+        defaults['reference'] = None
+        defaults['cache_data'] = False
+        defaults['stats_in_title'] = False
+        for config_opt in defaults:
+            if config_opt not in config_dict:
+                config_dict[config_opt] = defaults[config_opt]
         # Read YAML configuration
         self.logger = logging.getLogger(config_key)
         self._config_key = config_key
         self._config_dict = config_dict
         self._var_dict = var_dict
-        if 'reference' in config_dict:
-            self.reference = config_dict['reference']
-        else:
-            self.reference = None
-        if 'cache_data' in config_dict:
-            self.cache_data = config_dict['cache_data']
-        else:
-            self.cache_data = False
+        self.reference = config_dict['reference']
+        self.cache_data = config_dict['cache_data']
         self.data_sources = None
         self._check()
         self._open_datasets(is_climo)
