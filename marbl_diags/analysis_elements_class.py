@@ -73,8 +73,8 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 if self._config_dict['data_sources'][data_source]['source'] == 'cesm':
                     self.data_sources[data_source] = data_source_classes.CESMData(
                         **self._config_dict['data_sources'][data_source])
-                elif self._config_dict['data_sources'][data_source]['source'] == 'woa2013':
-                    self.data_sources[data_source] = data_source_classes.WOA2013Data(
+                elif self._config_dict['data_sources'][data_source]['source'] in ['woa2005', 'woa2013']:
+                    self.data_sources[data_source] = data_source_classes.WOAData(
                         var_dict=self._var_dict,
                         **self._config_dict['data_sources'][data_source])
                 else:
