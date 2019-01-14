@@ -104,7 +104,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
 
                 #-- generate figure object
                 fig = plt.figure(figsize=(ncol*6,nrow*4))
-                fig.suptitle("{} at {}m".format(v, sel_z))
+                fig.suptitle("{} at {}".format(v, depth_str))
 
                 for i, ds_name in enumerate(data_source_name_list):
 
