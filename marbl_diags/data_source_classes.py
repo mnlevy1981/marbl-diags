@@ -226,14 +226,14 @@ class WOAData(GenericDataSource):
                 else:
                     self.ds = dsi
 
-        # if self.ds.dims.time == 1:
-        #     self._is_ann_climo = True
-        #     self._is_mon_climo = False
-        # elif self.ds.dims.time == 12:
-        self._is_ann_climo = False
-        self._is_mon_climo = True
-        # else:
-        #     raise ValueError("time dimension must be 1 or 12")
+        if freq == 'ann':
+            self._is_ann_climo = True
+            self._is_mon_climo = False
+        elif freq == 'mon':
+            self._is_ann_climo = False
+            self._is_mon_climo = True
+        else:
+             raise ValueError("frequency must be 'ann' or 'mon'")
 
     def _list_files(self, dirin, v, freq='ann', grid='1x1d'):
         """ docstring """
