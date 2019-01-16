@@ -18,7 +18,6 @@ def plot_ann_climo(AnalysisElement, config_dict):
     valid_time_dims = dict()
     for ds_name, data_source in AnalysisElement.data_sources.items():
         # 1. data source needs time dimension of 1 or 12
-        AnalysisElement.logger.info('{} -- ds.dims: {}'.format(ds_name, data_source.ds.dims))
         if data_source.ds.dims['time'] not in [1, 12]:
             raise ValueError("Dataset '{}' must have time dimension of 1 or 12".format(ds_name))
         # 2. set up averages to reflect proper dimensions
@@ -129,14 +128,12 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                     # Get stats (probably refactor this at some point)
                     fmin = np.nanmin(field)
                     fmax = np.nanmax(field)
-                    # FIXME: compute RMS (use esmlab?)
-                    # NOTE: area field name depends on grid, deal with that elsewhere
                     if 'time' in ds['TAREA'].dims:
                         TAREA = ds['TAREA'].isel(time=0)
                     else:
                         TAREA = ds['TAREA']
-                    fmean = esmlab.statistics.weighted_mean(field, TAREA).load().item()
-                    fRMS = 'TBD'
+                    fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
+                    fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
 
                     ax = fig.add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
 
@@ -159,7 +156,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         facecolor='gray'))
 
                     if AnalysisElement._config_dict['stats_in_title']:
-                        title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {}".format(
+                        title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
                              ds_name, fmin, fmax, fmean, fRMS)
                         AnalysisElement.logger.info(title_str)
                         ax.set_title(title_str)
