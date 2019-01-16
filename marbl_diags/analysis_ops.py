@@ -150,10 +150,11 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                                      norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
                     del(field)
 
-                    land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
-                        'physical','land','110m',
-                        edgecolor='face',
-                        facecolor='gray'))
+                    # land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
+                    #     'physical','land','110m',
+                    #     edgecolor='face',
+                    #     facecolor='gray'))
+                    ax.background_patch.set_facecolor('gray')
 
                     if AnalysisElement._config_dict['stats_in_title']:
                         title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
