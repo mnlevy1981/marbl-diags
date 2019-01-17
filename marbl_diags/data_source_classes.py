@@ -39,6 +39,10 @@ class CESMData(GenericDataSource):
     def __init__(self, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
         self._get_dataset(**kwargs['open_dataset'])
+        #-- do unit conversions belong here?
+        # maybe there should be a "conform_data_sources" method?
+        if 'z_t' in self.ds:
+            self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
     def compute_mon_climatology(self):
         """ Compute monthly climatology (if necessary) """
@@ -140,11 +144,6 @@ class CESMData(GenericDataSource):
         else:
             raise ValueError('Uknown format: %s' % filetype)
 
-        #-- do unit conversions belong here?
-        # maybe there should be a "conform_data_sources" method?
-        if 'z_t' in self.ds:
-            self.ds.z_t.values = self.ds.z_t.values * 1e-2
-
         # should this method handle making the 'time' variable functional?
         # (i.e., take mean of time_bound, convert to date object)
 
@@ -171,6 +170,10 @@ class WOAData(GenericDataSource):
         super(WOAData, self).__init__(child_class='WOAData', **kwargs)
         self._set_woa_names()
         self._get_dataset(var_dict, **kwargs['open_dataset'])
+        #-- do unit conversions belong here?
+        # maybe there should be a "conform_data_sources" method?
+        if 'z_t' in self.ds:
+            self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
     def _set_woa_names(self):
         """ Define the _woa_names dictionary """
