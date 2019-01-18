@@ -13,7 +13,7 @@ import esmlab
 from . import plottools as pt
 
 def plot_ann_climo(AnalysisElement, config_dict):
-    """ Regardless of data source, generate png based on annual climatology"""
+    """ Regardless of data source, generate plots based on annual climatology"""
     # set up time dimension for averaging
     valid_time_dims = dict()
     for ds_name, data_source in AnalysisElement.data_sources.items():
@@ -26,7 +26,7 @@ def plot_ann_climo(AnalysisElement, config_dict):
     _plot_climo(AnalysisElement, config_dict, valid_time_dims)
 
 def plot_mon_climo(AnalysisElement, config_dict):
-    """ Regardless of data source, generate png based on monthly climatology"""
+    """ Regardless of data source, generate plots based on monthly climatology"""
     # set up time dimension for averaging
     valid_time_dims = dict()
     for ds_name, data_source in AnalysisElement.data_sources.items():
@@ -43,7 +43,7 @@ def plot_mon_climo(AnalysisElement, config_dict):
     _plot_climo(AnalysisElement, config_dict, valid_time_dims)
 
 def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
-    """ Regardless of data source, generate png """
+    """ Regardless of data source, generate plots """
     # look up grid (move to known grids database)
     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
         # and is tracer....
@@ -96,11 +96,10 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                     depth_str = '{:.0f}m'.format(sel_z)
 
                 #-- name of the plot
-                plot_name = '{}/state-map-{}.{}.{}.{}.png'.format(AnalysisElement._config_dict['dirout'],
-                                                                  AnalysisElement._config_dict['short_name'],
-                                                                  v,
-                                                                  depth_str,
-                                                                  time_period)
+                plot_name = 'state-map-{}_{}_{}_{}'.format(AnalysisElement._config_dict['short_name'],
+                                                           v,
+                                                           depth_str,
+                                                           time_period)
                 AnalysisElement.logger.info('generating plot: %s', plot_name)
 
                 #-- generate figure object
@@ -170,5 +169,8 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                 cax = plt.axes((0.93, 0.15, 0.02, 0.7))
                 fig.colorbar(cf, cax=cax)
 
-                fig.savefig(plot_name, bbox_inches='tight', dpi=300)
+                fig.savefig('{}/{}.{}'.format(AnalysisElement._config_dict['dirout'],
+                                              plot_name,
+                                              AnalysisElement._config_dict['plot_format']),
+                            bbox_inches='tight', dpi=300, format=AnalysisElement._config_dict['plot_format'])
                 plt.close(fig)

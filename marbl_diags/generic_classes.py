@@ -114,6 +114,7 @@ class GenericAnalysisElement(object):
         defaults['reference'] = None
         defaults['cache_data'] = False
         defaults['stats_in_title'] = False
+        defaults['plot_format'] = 'png'
         for config_opt in defaults:
             if config_opt not in config_dict:
                 config_dict[config_opt] = defaults[config_opt]
