@@ -103,8 +103,9 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                 AnalysisElement.logger.info('generating plot: %s', plot_name)
 
                 #-- generate figure object
-                fig = plt.figure(figsize=(ncol*6,nrow*4))
-                fig.suptitle("{} at {}".format(v, depth_str))
+                AnalysisElement.fig[plot_name] = plt.figure(figsize=(ncol*6,nrow*4))
+                AnalysisElement.axs[plot_name] = np.empty(ncol*nrow, dtype=type(None))
+                AnalysisElement.fig[plot_name].suptitle("{} at {}".format(v, depth_str))
 
                 for i, ds_name in enumerate(data_source_name_list):
 
@@ -134,7 +135,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                     fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
                     fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
 
-                    ax = fig.add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
+                    AnalysisElement.axs[plot_name][i] = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
 
                     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
@@ -142,35 +143,42 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                     if v not in AnalysisElement._var_dict:
                         raise KeyError('{} not defined in variable YAML dict'.format(v))
 
-                    cf = ax.contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                     levels=AnalysisElement._var_dict[v]['contours']['levels'],
-                                     extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                     cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
-                                     norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
+                    AnalysisElement.axs[plot_name][i].background_patch.set_facecolor('gray')
+                    cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
+                                                                    levels=AnalysisElement._var_dict[v]['contours']['levels'],
+                                                                    extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                    cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
+                                                                    norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
                     del(field)
 
-                    # land = ax.add_feature(cartopy.feature.NaturalEarthFeature(
+                    # land = AnalysisElement.axs[plot_name][i].add_feature(cartopy.feature.NaturalEarthFeature(
                     #     'physical','land','110m',
                     #     edgecolor='face',
                     #     facecolor='gray'))
-                    ax.background_patch.set_facecolor('gray')
 
                     if AnalysisElement._config_dict['stats_in_title']:
                         title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
                              ds_name, fmin, fmax, fmean, fRMS)
                         AnalysisElement.logger.info(title_str)
-                        ax.set_title(title_str)
+                        AnalysisElement.axs[plot_name][i].set_title(title_str)
                     else:
-                        ax.set_title(ds_name)
-                    ax.set_xlabel('')
-                    ax.set_ylabel('')
+                        AnalysisElement.axs[plot_name][i].set_title(ds_name)
+                    AnalysisElement.axs[plot_name][i].set_xlabel('')
+                    AnalysisElement.axs[plot_name][i].set_ylabel('')
 
-                fig.subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
+                AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
                 cax = plt.axes((0.93, 0.15, 0.02, 0.7))
-                fig.colorbar(cf, cax=cax)
+                AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
 
-                fig.savefig('{}/{}.{}'.format(AnalysisElement._config_dict['dirout'],
-                                              plot_name,
-                                              AnalysisElement._config_dict['plot_format']),
-                            bbox_inches='tight', dpi=300, format=AnalysisElement._config_dict['plot_format'])
-                plt.close(fig)
+                if AnalysisElement._config_dict['plot_format']:
+                    AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement._config_dict['dirout'],
+                                                  plot_name,
+                                                  AnalysisElement._config_dict['plot_format']),
+                                bbox_inches='tight', dpi=300, format=AnalysisElement._config_dict['plot_format'])
+                plt.close(AnalysisElement.fig[plot_name])
+                if not AnalysisElement._config_dict['keep_figs']:
+                    del(AnalysisElement.fig[plot_name])
+                    (AnalysisElement.axs[plot_name])
+    if not AnalysisElement._config_dict['keep_figs']:
+        del(AnalysisElement.fig)
+        (AnalysisElement.axs)

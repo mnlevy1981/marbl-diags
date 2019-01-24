@@ -30,6 +30,8 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                         config_dict['climo_time_periods'] = ['ANN', 'DJF', 'MAM', 'JJA', 'SON']
                     else:
                         raise ValueError("'{}' is not a valid operation".format(op))
+                self.fig = dict()
+                self.axs = dict()
                 break
 
         super(AnalysisElements, self).__init__(config_key, config_dict, var_dict, is_climo)
