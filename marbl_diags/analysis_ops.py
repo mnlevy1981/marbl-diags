@@ -126,14 +126,17 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         field = field.mean(depth_coord_name)
 
                     # Get stats (probably refactor this at some point)
-                    fmin = np.nanmin(field)
-                    fmax = np.nanmax(field)
-                    if 'time' in ds['TAREA'].dims:
-                        TAREA = ds['TAREA'].isel(time=0)
-                    else:
-                        TAREA = ds['TAREA']
-                    fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
-                    fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
+                    if AnalysisElement._config_dict['stats_in_title']:
+                        # TAREA is needed for weighted means
+                        if 'time' in ds['TAREA'].dims:
+                            TAREA = ds['TAREA'].isel(time=0)
+                        else:
+                            TAREA = ds['TAREA']
+                        fmin = np.nanmin(field)
+                        fmax = np.nanmax(field)
+                        fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
+                        fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
+
 
                     AnalysisElement.axs[plot_name][i] = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
 

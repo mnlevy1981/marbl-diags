@@ -1,5 +1,5 @@
 CESM2.1_PI-WOA2013-ann-comparison:
-   short_name: ann_cesm2.1
+   short_name: tseries-and-tslice
    description: Comparing the CESM 2.1 preindustrial control to WOA2013
    dirout: /glade/scratch/mlevy/marbl-diag-out/plots
    cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
