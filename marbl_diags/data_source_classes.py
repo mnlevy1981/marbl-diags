@@ -173,7 +173,8 @@ class WOAData(GenericDataSource):
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
-            self.ds.z_t.values = self.ds.z_t.values * 1e-2
+            if self.ds.z_t.attrs['units'] in ['centimeters', 'cm']:
+                self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
     def _set_woa_names(self):
         """ Define the _woa_names dictionary """
