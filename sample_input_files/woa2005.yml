@@ -26,10 +26,10 @@ CESM2.1_PI-WOA2013-ann-comparison:
             case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
             stream: tavg
             datestr: 0317-0326
-     WOA2005:
-        source: woa2005
-        open_dataset:
-           dirin: /glade/p/cesm/bgcwg/obgc_diag/data/obs_data/WOA2005
-           filename: WOA05_ann_avg_gx1v6.nc
-           freq: ann
-           grid: POP_gx1v7
+      WOA2005:
+         source: woa2005
+         open_dataset:
+            dirin: /glade/p/cesm/bgcwg/obgc_diag/data/obs_data/WOA2005
+            filename: WOA05_ann_avg_gx1v6.nc
+            freq: ann
+            grid: POP_gx1v7

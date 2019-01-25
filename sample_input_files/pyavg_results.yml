@@ -11,13 +11,13 @@ CESM2.1_PI-WOA2013-ann-comparison:
       - plot_ann_climo
    variable_list:
       - nitrate
-     - phosphate
-     - oxygen
-     - silicate
+      - phosphate
+      - oxygen
+      - silicate
    depth_list:
       - 0.
-     - [200., 600.]
-     - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
+      - [200., 600.]
+      - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
    reference: WOA2013
    cache_data: True
    data_sources:
