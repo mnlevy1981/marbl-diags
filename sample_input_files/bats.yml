@@ -1,0 +1,37 @@
+bats-woa2013-comparison:
+   short_name: hot_bats_13c
+   description: Comparing Matt's hot_bats_13c to WOA
+   dirout: /glade/scratch/mlevy/marbl-diag-out/plots
+   cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
+   source: ocean_diagnostics
+   grid: POP_gx1v7 # grid on which to conduct the analysis
+   operations:
+      - plot_mon_climo
+   climo_time_periods:
+      - ANN
+      - DJF
+      - JJA
+   variable_list:
+      - nitrate
+      - phosphate
+   depth_list:
+      - 0.
+      - [200., 600.]
+      - [2000., 5000.]
+   reference: WOA2013
+   cache_data: True
+   data_sources:
+      g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002: # Matt Long test case
+         source: cesm
+         open_dataset:
+            filetype: hist
+            dirin: /glade/scratch/mclong/archive/g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002/ocn/hist
+            case: g.e20.G1850ECOIAF.T62_g17.hot_bats_13c.002
+            stream: pop.h
+            datestr: ????-??
+      WOA2013:
+         source: woa2013
+         open_dataset:
+            dirin: /glade/work/mclong/woa2013v2
+            freq: mon
+            grid: POP_gx1v7

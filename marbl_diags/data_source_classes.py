@@ -16,7 +16,8 @@ class CachedClimoData(GenericDataSource):
 
     def _get_dataset(self, data_root, data_type):
         self.logger.info('calling _get_dataset, data_type = %s', data_type)
-        self._is_climo = True
+        self._is_ann_climo = False
+        self._is_mon_climo = True
         if data_type == 'zarr':
             self.ds = xr.open_zarr(data_root, decode_times=False, decode_coords=False) # pylint: disable=invalid-name
 
@@ -38,10 +39,14 @@ class CESMData(GenericDataSource):
     def __init__(self, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
         self._get_dataset(**kwargs['open_dataset'])
+        #-- do unit conversions belong here?
+        # maybe there should be a "conform_data_sources" method?
+        if 'z_t' in self.ds:
+            self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
     def compute_mon_climatology(self):
         """ Compute monthly climatology (if necessary) """
-        if self._is_climo:
+        if self._is_mon_climo or self._is_ann_climo:
             return
         super(CESMData, self).compute_mon_climatology()
 
@@ -53,7 +58,8 @@ class CESMData(GenericDataSource):
 
         if filetype == 'hist':
 
-            self._is_climo = False
+            self._is_ann_climo = False
+            self._is_mon_climo = False
             file_name_pattern = []
             for date_str in datestr:
                 file_name_pattern.append('{}/{}.{}.{}.nc'.format(dirin, case, stream, date_str))
@@ -84,9 +90,14 @@ class CESMData(GenericDataSource):
             self.logger.debug('dropping vars: %s', drop_vars)
             self.ds = self.ds.drop(drop_vars)
 
-        elif filetype == 'climo':
+        elif filetype in ['mon_climo', 'ann_climo']:
 
-            self._is_climo = True
+            if filetype == 'mon_climo':
+                self._is_ann_climo = False
+                self._is_mon_climo = True
+            else:
+                self._is_ann_climo = True
+                self._is_mon_climo = False
             file_name_pattern = []
             for date_str in datestr:
                 file_name_pattern.append('{}/{}.{}.nc'.format(dirin, stream, date_str))
@@ -119,7 +130,8 @@ class CESMData(GenericDataSource):
 
         elif filetype == 'single_variable':
 
-            self._is_climo = False
+            self._is_ann_climo = False
+            self._is_mon_climo = False
             self.ds = xr.Dataset()
             for variable in self._var_dict.values():
                 file_name_pattern = []
@@ -131,11 +143,6 @@ class CESMData(GenericDataSource):
 
         else:
             raise ValueError('Uknown format: %s' % filetype)
-
-        #-- do unit conversions belong here?
-        # maybe there should be a "conform_data_sources" method?
-        if 'z_t' in self.ds:
-            self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
         # should this method handle making the 'time' variable functional?
         # (i.e., take mean of time_bound, convert to date object)
@@ -157,12 +164,16 @@ class CESMData(GenericDataSource):
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
 
-class WOA2013Data(GenericDataSource):
+class WOAData(GenericDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, var_dict, **kwargs):
-        super(WOA2013Data, self).__init__(child_class='WOA2013Data', **kwargs)
+        super(WOAData, self).__init__(child_class='WOAData', **kwargs)
         self._set_woa_names()
         self._get_dataset(var_dict, **kwargs['open_dataset'])
+        #-- do unit conversions belong here?
+        # maybe there should be a "conform_data_sources" method?
+        if 'z_t' in self.ds:
+            self.ds.z_t.values = self.ds.z_t.values * 1e-2
 
     def _set_woa_names(self):
         """ Define the _woa_names dictionary """
@@ -181,37 +192,51 @@ class WOA2013Data(GenericDataSource):
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
 
-    def _get_dataset(self, var_dict, dirin, freq='ann', grid='1x1d'):
+    def _get_dataset(self, var_dict, dirin, freq='ann', grid='1x1d', filename=None):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
                       'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
 
-        self.ds = xr.Dataset()
-        self._is_climo = True
-        for varname_generic, varname in self._var_dict.items():
-            v = self._woa_names[varname_generic] # pylint: disable=invalid-name
+        if filename:
+            self._files = os.path.join(dirin, filename)
+            self.logger.info("Reading {}".format(self._files))
+            self.ds = xr.open_dataset(self._files, decode_times=False)
+            self.ds.rename({'depth': 'z_t'}, inplace=True)
+        else:
+            self.ds = xr.Dataset()
+            for varname_generic, varname in self._var_dict.items():
+                v = self._woa_names[varname_generic] # pylint: disable=invalid-name
 
-            self._list_files(dirin=dirin, v=v, freq=freq, grid=grid)
-            dsi = xr.open_mfdataset(self._files, decode_times=False)
+                self._list_files(dirin=dirin, v=v, freq=freq, grid=grid)
+                dsi = xr.open_mfdataset(self._files, decode_times=False)
 
-            if '{}_an'.format(v) in dsi.variables and varname != '{}_an'.format(v):
-                dsi.rename({'{}_an'.format(v):varname}, inplace=True)
+                if '{}_an'.format(v) in dsi.variables and varname != '{}_an'.format(v):
+                    dsi.rename({'{}_an'.format(v):varname}, inplace=True)
 
-            dsi = dsi.drop([k for k in dsi.variables if '{}_'.format(v) in k])
+                dsi = dsi.drop([k for k in dsi.variables if '{}_'.format(v) in k])
 
-            if varname in ['O2', 'AOU', 'O2sat']:
-                dsi[varname] = dsi[varname] * mlperl_2_mmolm3
-                dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
+                if varname in ['O2', 'AOU', 'O2sat']:
+                    dsi[varname] = dsi[varname] * mlperl_2_mmolm3
+                    dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
 
-            if dsi[varname].attrs['units'] == 'micromoles_per_liter':
-                dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
-            dsi[varname].attrs['long_name'] = long_names[varname]
+                if dsi[varname].attrs['units'] == 'micromoles_per_liter':
+                    dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
+                dsi[varname].attrs['long_name'] = long_names[varname]
 
-            if self.ds.variables:
-                self.ds = xr.merge((self.ds, dsi))
-            else:
-                self.ds = dsi
+                if self.ds.variables:
+                    self.ds = xr.merge((self.ds, dsi))
+                else:
+                    self.ds = dsi
+
+        if freq == 'ann':
+            self._is_ann_climo = True
+            self._is_mon_climo = False
+        elif freq == 'mon':
+            self._is_ann_climo = False
+            self._is_mon_climo = True
+        else:
+             raise ValueError("frequency must be 'ann' or 'mon'")
 
     def _list_files(self, dirin, v, freq='ann', grid='1x1d'):
         """ docstring """

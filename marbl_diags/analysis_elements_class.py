@@ -23,6 +23,15 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         for op in config_dict['operations']:
             if 'climo' in op:
                 is_climo=True
+                if 'climo_time_periods' not in config_dict:
+                    if 'ann_climo' in op:
+                        config_dict['climo_time_periods'] = ['ANN']
+                    elif 'mon_climo' in op:
+                        config_dict['climo_time_periods'] = ['ANN', 'DJF', 'MAM', 'JJA', 'SON']
+                    else:
+                        raise ValueError("'{}' is not a valid operation".format(op))
+                self.fig = dict()
+                self.axs = dict()
                 break
 
         super(AnalysisElements, self).__init__(config_key, config_dict, var_dict, is_climo)
@@ -42,14 +51,14 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 climo_str = 'climo'
             else:
                 climo_str = 'no_climo'
-            self._cached_locations[data_source] = "{}/work/{}.{}.{}.{}".format(
-                self._config_dict['dirout'],
+            self._cached_locations[data_source] = "{}/{}.{}.{}.{}".format(
+                self._config_dict['cache_dir'],
                 self._config_key,
                 data_source,
                 climo_str,
                 'zarr')
-            self._cached_var_dicts[data_source] = "{}/work/{}.{}.{}.json".format(
-                self._config_dict['dirout'],
+            self._cached_var_dicts[data_source] = "{}/{}.{}.{}.json".format(
+                self._config_dict['cache_dir'],
                 self._config_key,
                 data_source,
                 climo_str)
@@ -66,8 +75,8 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 if self._config_dict['data_sources'][data_source]['source'] == 'cesm':
                     self.data_sources[data_source] = data_source_classes.CESMData(
                         **self._config_dict['data_sources'][data_source])
-                elif self._config_dict['data_sources'][data_source]['source'] == 'woa2013':
-                    self.data_sources[data_source] = data_source_classes.WOA2013Data(
+                elif self._config_dict['data_sources'][data_source]['source'] in ['woa2005', 'woa2013']:
+                    self.data_sources[data_source] = data_source_classes.WOAData(
                         var_dict=self._var_dict,
                         **self._config_dict['data_sources'][data_source])
                 else:
@@ -78,7 +87,9 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         # Call any necessary operations on datasets
         ops_list = []
         for op in self._config_dict['operations']:
-            if op in ['plot_climo']:
+            if op in ['plot_mon_climo', 'plot_ann_climo']:
+                # For now, we'll take the average of the monthly ann_climatology
+                # FIXME: add compute_ann_climatology function (from esmlab)
                 ops_list.append('compute_mon_climatology')
         if ops_list:
             self._operate_on_datasets(ops_list)
@@ -95,7 +106,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 # write to cache
                 if self.cache_data:
                     if op == 'compute_mon_climatology':
-                        if not self.data_sources[data_source]._is_climo:
+                        if not (self.data_sources[data_source]._is_mon_climo or self.data_sources[data_source]._is_ann_climo):
                             self.data_sources[data_source].cache_dataset(self._cached_locations[data_source],
                                                                        self._cached_var_dicts[data_source])
 

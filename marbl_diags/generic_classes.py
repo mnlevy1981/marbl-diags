@@ -109,19 +109,23 @@ class GenericAnalysisElement(object):
     """
     def __init__(self, config_key, config_dict, var_dict, is_climo):
         """ construct class object based on config_file_in (YAML format) """
+        # Set default values for _config_dict
+        defaults = dict()
+        defaults['reference'] = None
+        defaults['cache_data'] = False
+        defaults['stats_in_title'] = False
+        defaults['plot_format'] = 'png'
+        defaults['keep_figs'] = False
+        for config_opt in defaults:
+            if config_opt not in config_dict:
+                config_dict[config_opt] = defaults[config_opt]
         # Read YAML configuration
         self.logger = logging.getLogger(config_key)
         self._config_key = config_key
         self._config_dict = config_dict
         self._var_dict = var_dict
-        if 'reference' in config_dict:
-            self.reference = config_dict['reference']
-        else:
-            self.reference = None
-        if 'cache_data' in config_dict:
-            self.cache_data = config_dict['cache_data']
-        else:
-            self.cache_data = False
+        self.reference = config_dict['reference']
+        self.cache_data = config_dict['cache_data']
         self.data_sources = None
         self._check()
         self._open_datasets(is_climo)
@@ -135,7 +139,8 @@ class GenericAnalysisElement(object):
         Configuration file must be laid out as follows.
         analysis_element:
           description: {{ description_text }}
-          dirout: {{ path_to_save_temp_files }}
+          dirout: {{ path_to_write_plot_files }}
+          cache_dir: {{ path_to_save_cached_data }}
           source: {{ module_for_compute }}
           operations: {{ List of methods of form: ? = func(data_source,data_sources)}}
           variable_list: {{ list of variables to include in analysis (might be derived) }}
@@ -154,12 +159,12 @@ class GenericAnalysisElement(object):
         if not isinstance(self._config_dict, dict):
             raise TypeError("configuration dictionary is not a dictionary")
 
-        if 'climo_time_periods' not in self._config_dict:
-            self._config_dict['climo_time_periods'] = ['DJF', 'MAM', 'JJA', 'SON', 'ANN']
-
         self.logger.info("Checking contents of %s", self._config_key)
         # Check for required fields in top level analysis element
-        for expected_key in ['dirout', 'source', 'data_sources', 'operations']:
+        if not self.cache_data:
+            self._config_dict['cache_dir'] = None
+        expected_keys = ['dirout', 'cache_dir', 'source', 'data_sources', 'operations']
+        for expected_key in expected_keys:
             if  expected_key not in self._config_dict:
                 raise KeyError("Can not find '%s' in '%s' section of configuration" %
                                (expected_key, self._config_key))
