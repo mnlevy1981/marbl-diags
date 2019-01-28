@@ -128,7 +128,6 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         field = ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
                     else:
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
-                    AnalysisElement.logger.info('Plotting %s from %s', var_name, ds_name)
 
                     if ref_data_source_name and config_dict['plot_bias']:
                         if ds_name != ref_data_source_name:
@@ -144,6 +143,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
 
                     ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
                     AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                    AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
 
                     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
@@ -161,12 +161,13 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         if ds_name == ref_data_source_name:
                             continue
 
-                        AnalysisElement.logger.info('Plotting %s bias from %s', var_name, ds_name)
                         field = bias_field[ds_name]
 
                         # set up axs for bias plot
                         ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
                         AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), field, ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                        AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
+
                         if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                             lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
                         cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree())
