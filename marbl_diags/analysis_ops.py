@@ -129,9 +129,8 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                     else:
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
 
-                    if ref_data_source_name and config_dict['plot_bias']:
-                        if ds_name != ref_data_source_name:
-                            bias_field[ds_name] = field - AnalysisElement.data_sources[ref_data_source_name].ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
+                    if ref_data_source_name and config_dict['plot_bias'] and ds_name != ref_data_source_name:
+                        bias_field[ds_name] = field - AnalysisElement.data_sources[ref_data_source_name].ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
 
                     if is_depth_range:
                         field = field.mean(depth_coord_name)
@@ -154,26 +153,17 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                                                                     norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
                     del(field)
 
-                # Plot bias
-                i = len(data_source_name_list)
-                if ref_data_source_name and config_dict['plot_bias']:
-                    for ds_name in data_source_name_list:
-                        if ds_name == ref_data_source_name:
-                            continue
-
-                        field = bias_field[ds_name]
-
-                        # set up axs for bias plot
-                        ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
-                        AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), field, ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
-                        AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
+                    if ref_data_source_name and config_dict['plot_bias'] and ds_name != ref_data_source_name:
+                        j = i + len(data_source_name_list) - 1
+                        ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1, projection=ccrs.Robinson(central_longitude=305.0))
+                        AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                        AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
 
                         if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
-                            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
-                        cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree())
+                            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, bias_field[ds_name])
+                        cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,field,transform=ccrs.PlateCarree())
 
-                        i += 1
-                else:
+                if not (ref_data_source_name and config_dict['plot_bias']):
                     AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
                     cax = plt.axes((0.93, 0.15, 0.02, 0.7))
                     AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
