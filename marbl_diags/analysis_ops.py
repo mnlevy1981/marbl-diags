@@ -153,18 +153,23 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                                                                     norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
                     del(field)
 
-                    if ref_data_source_name and config_dict['plot_bias'] and ds_name != ref_data_source_name:
-                        j = i + len(data_source_name_list) - 1
-                        ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1, projection=ccrs.Robinson(central_longitude=305.0))
-                        AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
-                        AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
+                    if ref_data_source_name and config_dict['plot_bias']:
+                        AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
+                        if ds_name != ref_data_source_name:
+                            j = i + len(data_source_name_list) - 1
+                            ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1, projection=ccrs.Robinson(central_longitude=305.0))
+                            AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                            AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
 
-                        if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
-                            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, bias_field[ds_name])
-                        cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,field,transform=ccrs.PlateCarree())
+                            if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+                                lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, bias_field[ds_name])
+                            cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
+                                                                    levels=AnalysisElement._var_dict[v]['contours']['bias_levels'],
+                                                                    extend=AnalysisElement._var_dict[v]['contours']['extend'],)
+                            AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][j])
 
+                AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
                 if not (ref_data_source_name and config_dict['plot_bias']):
-                    AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
                     cax = plt.axes((0.93, 0.15, 0.02, 0.7))
                     AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
 

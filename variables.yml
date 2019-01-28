@@ -29,6 +29,18 @@ nitrate:
          - 34
          - 38
          - 42
+      bias_levels:
+         - -5
+         - -4
+         - -3
+         - -2
+         - -1
+         - 0
+         - 1
+         - 2
+         - 3
+         - 4
+         - 5
       midpoint: 2
       extend: both
       cmap: PRGn
