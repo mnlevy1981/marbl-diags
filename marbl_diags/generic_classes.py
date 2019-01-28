@@ -112,6 +112,7 @@ class GenericAnalysisElement(object):
         # Set default values for _config_dict
         defaults = dict()
         defaults['reference'] = None
+        defaults['plot_bias'] = False
         defaults['cache_data'] = False
         defaults['stats_in_title'] = False
         defaults['plot_format'] = 'png'

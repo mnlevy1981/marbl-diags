@@ -68,17 +68,21 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
 
     #-- loop over datasets
     data_source_name_list = AnalysisElement.data_sources.keys()
+    plt_count = len(data_source_name_list)
     if ref_data_source_name:
         data_source_name_list = [ref_data_source_name] + \
                                 [data_source_name for data_source_name in data_source_name_list
                                     if data_source_name != ref_data_source_name]
+        if config_dict['plot_bias']:
+            plt_count = 2*plt_count - 1
+            bias_field = dict()
 
     #-- loop over variables
     for v in AnalysisElement._config_dict['variable_list']:
 
-        nrow, ncol = pt.get_plot_dims(len(data_source_name_list))
+        nrow, ncol = pt.get_plot_dims(plt_count)
         AnalysisElement.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
-                         nrow, ncol, len(data_source_name_list))
+                         nrow, ncol, plt_count)
 
         #-- loop over time periods
         for time_period in config_dict['climo_time_periods']:
@@ -107,6 +111,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                 AnalysisElement.axs[plot_name] = np.empty(ncol*nrow, dtype=type(None))
                 AnalysisElement.fig[plot_name].suptitle("{} at {}".format(v, depth_str))
 
+                # Plot climo state
                 for i, ds_name in enumerate(data_source_name_list):
 
                     ds = AnalysisElement.data_sources[ds_name].ds
@@ -122,8 +127,15 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
                     AnalysisElement.logger.info('Plotting %s from %s', var_name, ds_name)
 
+                    if ref_data_source_name and config_dict['plot_bias']:
+                        if ds_name != ref_data_source_name:
+                            bias_field[ds_name] = field - AnalysisElement.data_sources[ref_data_source_name].ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
+
                     if is_depth_range:
                         field = field.mean(depth_coord_name)
+                        if ref_data_source_name and config_dict['plot_bias']:
+                            if ds_name != ref_data_source_name:
+                                bias_field[ds_name] = bias_field[ds_name].mean(depth_coord_name)
 
                     # Get stats (probably refactor this at some point)
                     if AnalysisElement._config_dict['stats_in_title']:
@@ -136,7 +148,6 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         fmax = np.nanmax(field)
                         fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
                         fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
-
 
                     AnalysisElement.axs[plot_name][i] = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
 
@@ -169,9 +180,48 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                     AnalysisElement.axs[plot_name][i].set_xlabel('')
                     AnalysisElement.axs[plot_name][i].set_ylabel('')
 
-                AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
-                cax = plt.axes((0.93, 0.15, 0.02, 0.7))
-                AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
+                # Plot bias
+                i = len(data_source_name_list)
+                if ref_data_source_name and config_dict['plot_bias']:
+                    for ds_name in data_source_name_list:
+                        if ds_name == ref_data_source_name:
+                            continue
+
+                        field = bias_field[ds_name]
+                        # Get stats (probably refactor this at some point)
+                        if AnalysisElement._config_dict['stats_in_title']:
+                            # TAREA is needed for weighted means
+                            if 'time' in ds['TAREA'].dims:
+                                TAREA = ds['TAREA'].isel(time=0)
+                            else:
+                                TAREA = ds['TAREA']
+                            fmin = np.nanmin(field)
+                            fmax = np.nanmax(field)
+                            fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
+                            fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
+
+                        if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+                            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
+
+                        # set up axs for bias plot
+                        AnalysisElement.axs[plot_name][i] = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
+                        AnalysisElement.axs[plot_name][i].background_patch.set_facecolor('gray')
+                        cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree())
+
+                        if AnalysisElement._config_dict['stats_in_title']:
+                            title_str = "{} (Bias)\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
+                                 ds_name, fmin, fmax, fmean, fRMS)
+                            AnalysisElement.logger.info(title_str)
+                            AnalysisElement.axs[plot_name][i].set_title(title_str)
+                        else:
+                            AnalysisElement.axs[plot_name][i].set_title("{} (Bias)".format(ds_name))
+                        AnalysisElement.axs[plot_name][i].set_xlabel('')
+                        AnalysisElement.axs[plot_name][i].set_ylabel('')
+                        i += 1
+                else:
+                    AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
+                    cax = plt.axes((0.93, 0.15, 0.02, 0.7))
+                    AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
 
                 if AnalysisElement._config_dict['plot_format']:
                     AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement._config_dict['dirout'],

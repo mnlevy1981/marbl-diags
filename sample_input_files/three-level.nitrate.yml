@@ -16,6 +16,7 @@ CESM2.1_PI-WOA2013-ann-comparison:
       - 2500.
       - 4000.
    reference: WOA2013
+   plot_bias: True
    cache_data: True
    data_sources:
       b.e21.BW1850.f09_g17.CMIP6-piControl.001.ann_climatology:
