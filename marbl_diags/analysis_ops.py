@@ -80,6 +80,9 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
     #-- loop over variables
     for v in AnalysisElement._config_dict['variable_list']:
 
+        if v not in AnalysisElement._var_dict:
+            raise KeyError('{} not defined in variable YAML dict'.format(v))
+
         nrow, ncol = pt.get_plot_dims(plt_count)
         AnalysisElement.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
                          nrow, ncol, plt_count)
@@ -138,47 +141,18 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                                 bias_field[ds_name] = bias_field[ds_name].mean(depth_coord_name)
 
                     # Get stats (probably refactor this at some point)
-                    if AnalysisElement._config_dict['stats_in_title']:
-                        # TAREA is needed for weighted means
-                        if 'time' in ds['TAREA'].dims:
-                            TAREA = ds['TAREA'].isel(time=0)
-                        else:
-                            TAREA = ds['TAREA']
-                        fmin = np.nanmin(field)
-                        fmax = np.nanmax(field)
-                        fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
-                        fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
 
-                    AnalysisElement.axs[plot_name][i] = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
+                    ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
+                    AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
 
                     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
-
-                    if v not in AnalysisElement._var_dict:
-                        raise KeyError('{} not defined in variable YAML dict'.format(v))
-
-                    AnalysisElement.axs[plot_name][i].background_patch.set_facecolor('gray')
                     cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
                                                                     levels=AnalysisElement._var_dict[v]['contours']['levels'],
                                                                     extend=AnalysisElement._var_dict[v]['contours']['extend'],
                                                                     cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
                                                                     norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
                     del(field)
-
-                    # land = AnalysisElement.axs[plot_name][i].add_feature(cartopy.feature.NaturalEarthFeature(
-                    #     'physical','land','110m',
-                    #     edgecolor='face',
-                    #     facecolor='gray'))
-
-                    if AnalysisElement._config_dict['stats_in_title']:
-                        title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
-                             ds_name, fmin, fmax, fmean, fRMS)
-                        AnalysisElement.logger.info(title_str)
-                        AnalysisElement.axs[plot_name][i].set_title(title_str)
-                    else:
-                        AnalysisElement.axs[plot_name][i].set_title(ds_name)
-                    AnalysisElement.axs[plot_name][i].set_xlabel('')
-                    AnalysisElement.axs[plot_name][i].set_ylabel('')
 
                 # Plot bias
                 i = len(data_source_name_list)
@@ -187,36 +161,16 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         if ds_name == ref_data_source_name:
                             continue
 
+                        AnalysisElement.logger.info('Plotting %s bias from %s', var_name, ds_name)
                         field = bias_field[ds_name]
-                        # Get stats (probably refactor this at some point)
-                        if AnalysisElement._config_dict['stats_in_title']:
-                            # TAREA is needed for weighted means
-                            if 'time' in ds['TAREA'].dims:
-                                TAREA = ds['TAREA'].isel(time=0)
-                            else:
-                                TAREA = ds['TAREA']
-                            fmin = np.nanmin(field)
-                            fmax = np.nanmax(field)
-                            fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
-                            fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
-
-                        if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
-                            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
 
                         # set up axs for bias plot
-                        AnalysisElement.axs[plot_name][i] = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
-                        AnalysisElement.axs[plot_name][i].background_patch.set_facecolor('gray')
+                        ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
+                        AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), field, ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                        if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+                            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
                         cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree())
 
-                        if AnalysisElement._config_dict['stats_in_title']:
-                            title_str = "{} (Bias)\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
-                                 ds_name, fmin, fmax, fmean, fRMS)
-                            AnalysisElement.logger.info(title_str)
-                            AnalysisElement.axs[plot_name][i].set_title(title_str)
-                        else:
-                            AnalysisElement.axs[plot_name][i].set_title("{} (Bias)".format(ds_name))
-                        AnalysisElement.axs[plot_name][i].set_xlabel('')
-                        AnalysisElement.axs[plot_name][i].set_ylabel('')
                         i += 1
                 else:
                     AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
@@ -235,3 +189,24 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
     if not AnalysisElement._config_dict['keep_figs']:
         del(AnalysisElement.fig)
         (AnalysisElement.axs)
+
+def _compute_stats(field, TAREA):
+    fmin = np.nanmin(field)
+    fmax = np.nanmax(field)
+    fmean = esmlab.statistics.weighted_mean(field, TAREA).load().values
+    fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, TAREA).load().values)
+    return fmin, fmax, fmean, fRMS
+
+def _gen_plot_panel(ax, title_str, field, TAREA, stats_in_title):
+    ax.background_patch.set_facecolor('gray')
+    if stats_in_title:
+        # TAREA is needed for weighted means
+        if 'time' in TAREA.dims:
+            TAREA = TAREA.isel(time=0)
+        fmin, fmax, fmean, fRMS = _compute_stats(field, TAREA)
+        title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
+            title_str, fmin, fmax, fmean, fRMS)
+    ax.set_title(title_str)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    return ax
