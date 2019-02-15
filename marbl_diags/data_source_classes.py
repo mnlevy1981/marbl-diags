@@ -42,7 +42,10 @@ class CESMData(GenericDataSource):
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
-            self.ds.z_t.values = self.ds.z_t.values * 1e-2
+            self.ds['z_t'].values = self.ds['z_t'].values * 1e-2
+        if 'Fe' in self.ds:
+            self.ds['Fe'].values = self.ds['Fe'].values * 1e6
+            #self.ds.Fe.attrs.units = 'pM'
 
     def compute_mon_climatology(self):
         """ Compute monthly climatology (if necessary) """
@@ -163,6 +166,9 @@ class CESMData(GenericDataSource):
         self._var_dict['phosphate'] = 'PO4'
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
+        self._var_dict['dic'] = 'DIC'
+        self._var_dict['alkalinity'] = 'ALK'
+        self._var_dict['iron'] = 'Fe'
 
 class WOAData(GenericDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
@@ -185,6 +191,8 @@ class WOAData(GenericDataSource):
         self._woa_names['phosphate'] = 'p'
         self._woa_names['oxygen'] = 'o'
         self._woa_names['silicate'] = 'i'
+        # self._woa_names['dic'] = 'none'
+        # self._woa_names['alkalinity'] = 'none'
 
     def _set_var_dict(self):
         self._var_dict = dict()
@@ -192,12 +200,15 @@ class WOAData(GenericDataSource):
         self._var_dict['phosphate'] = 'PO4'
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
+        # self._var_dict['dic'] = 'DIC'
+        # self._var_dict['alkalinity'] = 'ALK'
 
     def _get_dataset(self, var_dict, dirin, freq='ann', grid='1x1d', filename=None):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
-                      'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
+                      'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature',
+                      'DIC':'Dissolved Inorganic Carbon', 'ALK' : 'Alkalinity'}
 
         if filename:
             self._files = os.path.join(dirin, filename)

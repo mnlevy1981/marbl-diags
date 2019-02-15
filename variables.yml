@@ -78,42 +78,47 @@ phosphate:
          - 2.4
          - 2.8
          - 3.2
+      bias_levels:
+         - -0.8
+         - -0.6
+         - -0.4
+         - -0.2
+         - 0
+         - 0.2
+         - 0.4
+         - 0.6
+         - 0.8
       midpoint: 0.8
-      extend: max
+      extend: both
       cmap: PRGn
 oxygen:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
       levels:
-         - 0
-         - 1
-         - 2
-         - 3
-         - 4
-         - 5
-         - 7
-         - 9
-         - 10
-         - 15
-         - 20
-         - 25
-         - 30
-         - 40
          - 50
+         - 80
+         - 110
+         - 140
+         - 170
+         - 200
+         - 230
+         - 260
+         - 290
+         - 320
+         - 350
+         - 380
+      bias_levels:
+         - -80
+         - -60
+         - -40
+         - -20
+         - 0
+         - 20
+         - 40
          - 60
          - 80
-         - 100
-         - 120
-         - 140
-         - 150
-         - 175
-         - 200
-         - 225
-         - 250
-         - 275
-         - 300
-      midpoint: 50
-      extend: max
+      midpoint: 215
+      extend: both
       cmap: PuOr
 silicate:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
@@ -147,6 +152,110 @@ silicate:
          - 140
          - 160
          - 180
-      midpoint: 5
-      extend: max
+      bias_levels:
+         - -50
+         - -40
+         - -30
+         - -20
+         - -10
+         - 0
+         - 10
+         - 20
+         - 30
+         - 40
+         - 50
+      midpoint: 10
+      extend: both
+      cmap: PRGn
+dic:
+   plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
+   contours:
+      levels:
+         - 1750
+         - 1800
+         - 1850
+         - 1900
+         - 1950
+         - 2000
+         - 2050
+         - 2100
+         - 2150
+         - 2200
+         - 2250
+         - 2300
+         - 2350
+      bias_levels:
+         - -200
+         - -150
+         - -100
+         - -50
+         - 0
+         - 50
+         - 100
+         - 150
+         - 200
+      midpoint: 2050
+      extend: both
+      cmap: PRGn
+alkalinity:
+   plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
+   contours:
+      levels:
+         - 2000
+         - 2050
+         - 2100
+         - 2150
+         - 2200
+         - 2250
+         - 2300
+         - 2350
+         - 2400
+         - 2450
+         - 2500
+         - 2550
+      bias_levels:
+         - -80
+         - -60
+         - -40
+         - -20
+         - 0
+         - 20
+         - 40
+         - 60
+         - 80
+      midpoint: 2275
+      extend: both
+      cmap: PRGn
+iron:
+   plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
+   contours:
+      levels:
+         - 5
+         - 10
+         - 20
+         - 30
+         - 60
+         - 120
+         - 220
+         - 420
+         - 780
+         - 1480
+         - 2800
+         - 5250
+         - 9880
+         - 18600
+      bias_levels:
+         - -500
+         - -100
+         - -50
+         - -25
+         - -10
+         - 0
+         - 10
+         - 25
+         - 50
+         - 100
+         - 500
+      midpoint: 320
+      extend: both
       cmap: PRGn
