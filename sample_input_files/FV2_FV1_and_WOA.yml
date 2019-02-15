@@ -1,8 +1,8 @@
 CESM2.1PI_CESM2.1FV2_WOA2015:
-   short_name: PI_FV2_WOA
+   short_name: WOA_PI_FV2
    description: Comparing the CESM 2.1 preindustrial control, CESM 2.1 FV2 run, and WOA2013
-   dirout: /glade/scratch/mlevy/diags_for_klindsay/plots
-   cache_dir: /glade/scratch/mlevy/diags_for_klindsay/cached_data
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/plots
+   cache_dir: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/cached_data
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    plot_format: 'png'
@@ -45,8 +45,8 @@ CESM2.1PI_CESM2.1FV2_WOA2015:
 CESM2.1PI_CESM2.1FV2:
    short_name: PI_FV2
    description: Comparing the CESM 2.1 preindustrial control, CESM 2.1 FV2 run, and WOA2013
-   dirout: /glade/scratch/mlevy/diags_for_klindsay/plots
-   cache_dir: /glade/scratch/mlevy/diags_for_klindsay/cached_data
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/plots
+   cache_dir: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/cached_data
    source: ocean_diagnostics
    grid: POP_gx1v7 # grid on which to conduct the analysis
    plot_format: 'png'
