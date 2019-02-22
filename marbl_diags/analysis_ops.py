@@ -158,7 +158,7 @@ def _plot_climo(AnalysisElement, config_dict, valid_time_dims):
                         if ds_name != ref_data_source_name:
                             j = i + len(data_source_name_list) - 1
                             ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1, projection=ccrs.Robinson(central_longitude=305.0))
-                            AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} (Bias)".format(ds_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                            AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} - {}".format(ds_name, ref_data_source_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
                             AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
 
                             if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
@@ -200,7 +200,7 @@ def _gen_plot_panel(ax, title_str, field, TAREA, stats_in_title):
         if 'time' in TAREA.dims:
             TAREA = TAREA.isel(time=0)
         fmin, fmax, fmean, fRMS = _compute_stats(field, TAREA)
-        title_str = "{}\nMin: {:.2f}, Max: {:.2f}, Mean: {:.2f}, RMS: {:.2f}".format(
+        title_str = "{}\nMin: {:.2f}, Max: {:.2f}\nMean: {:.2f}, RMS: {:.2f}".format(
             title_str, fmin, fmax, fmean, fRMS)
     ax.set_title(title_str)
     ax.set_xlabel('')

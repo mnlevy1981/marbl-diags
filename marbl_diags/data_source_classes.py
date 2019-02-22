@@ -228,10 +228,10 @@ class WOAData(GenericDataSource):
 
                 dsi = dsi.drop([k for k in dsi.variables if '{}_'.format(v) in k])
 
-                if varname in ['O2', 'AOU', 'O2sat']:
-                    dsi[varname] = dsi[varname] * mlperl_2_mmolm3
-                    dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
-
+                # if varname in ['O2', 'AOU', 'O2sat']:
+                #     dsi[varname] = dsi[varname] * mlperl_2_mmolm3
+                #     dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
+                # 
                 if dsi[varname].attrs['units'] == 'micromoles_per_liter':
                     dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
                 dsi[varname].attrs['long_name'] = long_names[varname]
