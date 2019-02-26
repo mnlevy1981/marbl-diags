@@ -7,6 +7,7 @@ config:
    #cache_fmt: zarr
    grid: POP_gx1v7 # grid on which to conduct the analysis
    plot_bias: True
+   stats_in_title: True
 
 # Collections
 data_sources: # Where are we getting data from?

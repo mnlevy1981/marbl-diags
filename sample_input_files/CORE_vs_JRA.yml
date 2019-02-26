@@ -3,6 +3,7 @@ config:
    plot_format: 'png'
    grid: POP_gx1v7 # grid on which to conduct the analysis
    plot_bias: True
+   stats_in_title: True
 
 data_sources:
    datasets.yml:

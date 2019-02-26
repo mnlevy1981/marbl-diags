@@ -43,7 +43,7 @@ nitrate:
          - 5
       midpoint: 2
       extend: both
-      cmap: PRGn
+      cmap: rainbow
 phosphate:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
@@ -90,7 +90,7 @@ phosphate:
          - 0.8
       midpoint: 0.8
       extend: both
-      cmap: PRGn
+      cmap: rainbow
 oxygen:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
@@ -119,7 +119,7 @@ oxygen:
          - 80
       midpoint: 215
       extend: both
-      cmap: PuOr
+      cmap: rainbow
 silicate:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
@@ -166,7 +166,7 @@ silicate:
          - 50
       midpoint: 10
       extend: both
-      cmap: PRGn
+      cmap: rainbow
 dic:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
@@ -196,7 +196,7 @@ dic:
          - 200
       midpoint: 2050
       extend: both
-      cmap: PRGn
+      cmap: rainbow
 alkalinity:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
@@ -225,7 +225,7 @@ alkalinity:
          - 80
       midpoint: 2275
       extend: both
-      cmap: PRGn
+      cmap: rainbow
 iron:
    plot_units: mmol/m^3 # Equivalent to umol/L and nmol/cm^3
    contours:
@@ -258,4 +258,4 @@ iron:
          - 500
       midpoint: 320
       extend: both
-      cmap: PRGn
+      cmap: rainbow

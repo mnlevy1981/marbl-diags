@@ -148,6 +148,10 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                                     extend=AnalysisElement._var_dict[v]['contours']['extend'],
                                                                     cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
                                                                     norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
+                    cs = AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
+                                                                   levels=AnalysisElement._var_dict[v]['contours']['levels'],
+                                                                   extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                   linewidths=0.5, colors='k')
                     del(field)
 
                     if ref_data_source_name and AnalysisElement._config_dict['plot_bias']:
@@ -161,8 +165,13 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                             if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                                 lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, bias_field[ds_name])
                             cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                                                    levels=AnalysisElement._var_dict[v]['contours']['bias_levels'],
-                                                                    extend=AnalysisElement._var_dict[v]['contours']['extend'],)
+                                                                            levels=AnalysisElement._var_dict[v]['contours']['bias_levels'],
+                                                                            extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                            cmap='bwr')
+                            cs = AnalysisElement.axs[plot_name][j].contour(cf, transform=ccrs.PlateCarree(),
+                                                                           levels=AnalysisElement._var_dict[v]['contours']['bias_levels'],
+                                                                           extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                           linewidths=0.5, colors='k')
                             AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][j])
 
                 AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
