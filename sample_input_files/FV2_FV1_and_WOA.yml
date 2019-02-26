@@ -1,60 +1,24 @@
-CESM2.1PI_CESM2.1FV2_WOA2015:
-   short_name: WOA_PI_FV2
-   description: Comparing the CESM 2.1 preindustrial control, CESM 2.1 FV2 run, and WOA2013
-   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/plots
-   cache_dir: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/cached_data
-   source: ocean_diagnostics
-   grid: POP_gx1v7 # grid on which to conduct the analysis
+config:
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay.take2/plots
    plot_format: 'png'
-   plot_bias: True
-   stats_in_title: True
-   operations:
-      - plot_ann_climo
-   variable_list:
-      - nitrate
-      - phosphate
-      - oxygen
-      - silicate
-   depth_list:
-      - 0.
-   reference: WOA2013
-   cache_data: True
-   data_sources:
-      PI_control: # POP history files from CESM 2.1 control run
-         source: cesm
-         open_dataset:
-            filetype: ann_climo
-            dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
-            case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-            stream: tavg_PI
-            datestr: 0271-0300
-      FV2: # POP history files from CESM 2.1 run with 2 degree atmosphere
-         source: cesm
-         open_dataset:
-            filetype: ann_climo
-            dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
-            case: b.e20.B1850.f19_g17.release_cesm2_1_0.002
-            stream: tavg_FV2
-            datestr: 0271-0300
-      WOA2013:
-         source: woa2013
-         open_dataset:
-            dirin: /glade/work/mclong/woa2013v2
-            freq: ann
-            grid: POP_gx1v7
-CESM2.1PI_CESM2.1FV2:
-   short_name: PI_FV2
-   description: Comparing the CESM 2.1 preindustrial control, CESM 2.1 FV2 run, and WOA2013
-   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/plots
-   cache_dir: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/cached_data
-   source: ocean_diagnostics
+   # provide cache information if we marbl-diags invokes esmlab for ann mean / climatology / etc
+   # cache_data: True
+   #cache_dir: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/cached_data
+   #cache_fmt: zarr
    grid: POP_gx1v7 # grid on which to conduct the analysis
-   plot_format: 'png'
    plot_bias: True
-   stats_in_title: True
-   operations:
-      - plot_ann_climo
-   variable_list:
+
+# Collections
+data_sources: # Where are we getting data from?
+   obs.yml:
+      - WOA2013
+   datasets.yml:
+      # Can not contain same key as obs.yml!
+      - PI_control
+      - FV2
+
+variables:
+   variables.yml:
       - nitrate
       - phosphate
       - oxygen
@@ -62,24 +26,36 @@ CESM2.1PI_CESM2.1FV2:
       - dic
       - alkalinity
       - iron
-   depth_list:
-      - 0.
-   reference: PI_control
-   cache_data: True
-   data_sources:
-      PI_control: # POP history files from CESM 2.1 control run
-         source: cesm
-         open_dataset:
-            filetype: ann_climo
-            dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
-            case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-            stream: tavg_PI
-            datestr: 0271-0300
-      FV2: # POP history files from CESM 2.1 run with 2 degree atmosphere
-         source: cesm
-         open_dataset:
-            filetype: ann_climo
-            dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
-            case: b.e20.B1850.f19_g17.release_cesm2_1_0.002
-            stream: tavg_FV2
-            datestr: 0271-0300
+
+analysis:
+   PI_vs_FV2:
+      op: plot_ann_climo # Use ann_climo in data_source if found, otherwise compute from tseries or tslice
+      dim_requirements: # move into analysis_ops.py
+         - "time:ann_mean"
+      sources: # Queries into collections
+         - PI_control
+         - FV2
+      # override config settings on individual analysis level
+      config:
+         reference: PI_control
+   WOA_vs_PI_vs_FV2:
+      op: plot_ann_climo # Use ann_climo in data_source if found, otherwise compute from tseries or tslice
+      sources:
+         - WOA2013
+         - PI_control
+         - FV2
+      variables: # Only necessary if a subset of main variable declaration
+         - nitrate
+         - phosphate
+         - oxygen
+         - silicate
+      config:
+         reference: WOA2013
+
+   # plot_regional_time_series: # Will require tseries or tslice in data_source
+   #    dim_requirements: # move into analysis_ops.py
+   #       - "nlat:mean"
+   #       - "nlon:mean"
+   #    sources:
+   #       - PI_control
+   #       - FV2

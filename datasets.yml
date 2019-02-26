@@ -1,0 +1,43 @@
+JRA_1st_cycle: # Who Kim's run, years 33 - 52 (1990 - 2009, 1st cycle)
+   source: cesm
+   open_dataset:
+      filetype: ann_climo
+      dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
+      case: g210.GECOIAF_JRA.gx1v7.C01
+      stream: tavg_JRA
+      datestr: 0033-0052
+CORE_1st_cycle: # Matt Long's run, years 43 - 62 (1990 - 2009, 1st cycle)
+   source: cesm
+   open_dataset:
+      filetype: ann_climo
+      case: g.e21a01d.G1850ECOIAF.T62_g17.extraterr-fe.001
+      dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
+      stream: tavg_CORE
+      datestr: 0043-0062
+      # time_series:
+      #    dirin: /glade/scratch/mclong/archive/g.e21a01d.G1850ECOIAF.T62_g17.extraterr-fe.001/ocn/proc/tseries/month_1
+      #    stream: pop.h
+CORE_5th_cycle: # Matt Long's run, years 291 - 310 (1990 - 2009, 5th cycle)
+   source: cesm
+   open_dataset:
+      filetype: ann_climo
+      dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
+      case: g.e21a01d.G1850ECOIAF.T62_g17.extraterr-fe.001
+      stream: tavg_CORE
+      datestr: 0291-0310
+PI_control: # POP history files from CESM 2.1 control run
+   source: cesm
+   open_dataset:
+      filetype: ann_climo
+      dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
+      case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
+      stream: tavg_PI
+      datestr: 0271-0300
+FV2: # POP history files from CESM 2.1 run with 2 degree atmosphere
+   source: cesm
+   open_dataset:
+      filetype: ann_climo
+      dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg
+      case: b.e20.B1850.f19_g17.release_cesm2_1_0.002
+      stream: tavg_FV2
+      datestr: 0271-0300

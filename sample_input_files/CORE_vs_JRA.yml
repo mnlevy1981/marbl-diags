@@ -1,0 +1,31 @@
+config:
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_CORE_JRA.take2/plots
+   plot_format: 'png'
+   grid: POP_gx1v7 # grid on which to conduct the analysis
+   plot_bias: True
+
+data_sources:
+   datasets.yml:
+      - JRA_1st_cycle
+      - CORE_1st_cycle
+      - CORE_5th_cycle
+
+variables:
+   variables.yml:
+      - nitrate
+      - phosphate
+      - oxygen
+      - silicate
+      - dic
+#      - alkalinity
+      - iron
+
+analysis:
+   JRA_vs_CORE:
+      op: plot_ann_climo
+      sources:
+         - JRA_1st_cycle
+         - CORE_1st_cycle
+         - CORE_5th_cycle
+      config:
+         reference: JRA_1st_cycle

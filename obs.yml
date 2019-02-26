@@ -1,0 +1,6 @@
+WOA2013:
+   source: woa2013
+   open_dataset:
+      dirin: /glade/work/mclong/woa2013v2
+      freq: ann
+      grid: POP_gx1v7

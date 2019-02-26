@@ -107,29 +107,60 @@ class GenericAnalysisElement(object):
         * variables: variables[var_name] is a list of alternative names for the variable
                      E.g. variables['nitrate'] = ['NO3', 'n_an']
     """
-    def __init__(self, config_key, config_dict, var_dict, is_climo):
+    def __init__(self, analysis_sname, analysis_dict, ds_dict, var_dict, config_dict):
         """ construct class object based on config_file_in (YAML format) """
+        if 'config' not in analysis_dict:
+            analysis_dict['config'] = dict()
+        analysis_sname = analysis_sname
+
         # Set default values for _config_dict
-        defaults = dict()
-        defaults['reference'] = None
-        defaults['plot_bias'] = False
-        defaults['cache_data'] = False
-        defaults['stats_in_title'] = False
-        defaults['plot_format'] = 'png'
-        defaults['keep_figs'] = False
-        for config_opt in defaults:
-            if config_opt not in config_dict:
-                config_dict[config_opt] = defaults[config_opt]
-        # Read YAML configuration
-        self.logger = logging.getLogger(config_key)
-        self._config_key = config_key
-        self._config_dict = config_dict
+        config_defaults = dict()
+        config_defaults['dirout'] = None
+        config_defaults['reference'] = None
+        config_defaults['plot_bias'] = False
+        config_defaults['cache_data'] = False
+        config_defaults['stats_in_title'] = False
+        config_defaults['plot_format'] = 'png'
+        config_defaults['keep_figs'] = False
+        config_defaults['grid'] = None
+        config_defaults['depth_list'] = [0]
+
+        # Define logger on type and save analysis short name
+        self.logger = logging.getLogger(analysis_sname)
+        self.analysis_sname = analysis_sname
+
+        # Populate _config_dict
+        self._config_dict = dict()
+        # (1) If present in analysis_dict['config'] use that value
+        # (2) Otherwise, if present in config_dict use that value
+        # (3) Otherwise use value from config_defaults
+        for config_opt in config_defaults:
+            if config_opt in analysis_dict['config']:
+                self._config_dict[config_opt] = analysis_dict['config'][config_opt]
+            elif config_opt in config_dict:
+                self._config_dict[config_opt] = config_dict[config_opt]
+            else:
+                self._config_dict[config_opt] = config_defaults[config_opt]
+
+        # No default for cache_dir, this needs to be set by user if cache_data is True
+        if self._config_dict['cache_data']:
+            if 'cache_dir' in analysis_dict['config']:
+                self._config_dict['cache_dir'] = analysis_dict['config']['cache_dir']
+            elif 'cache_dir' in config_dict:
+                self._config_dict['cache_dir'] = config_dict['cache_dir']
+
         self._var_dict = var_dict
-        self.reference = config_dict['reference']
-        self.cache_data = config_dict['cache_data']
-        self.data_sources = None
+        self._analysis_dict = analysis_dict
+        if 'variables' not in self._analysis_dict.keys():
+            self._analysis_dict['variables'] = self._var_dict.keys()
+        self._ds_dict = ds_dict
+
+        # Set up objects for plotting
+        self.fig = dict()
+        self.axs = dict()
+
         self._check()
-        self._open_datasets(is_climo)
+        self._open_datasets()
 
     ####################
     # PRIVATE ROUTINES #
@@ -137,45 +168,61 @@ class GenericAnalysisElement(object):
 
     def _check(self):
         """
-        Configuration file must be laid out as follows.
-        analysis_element:
-          description: {{ description_text }}
-          dirout: {{ path_to_write_plot_files }}
-          cache_dir: {{ path_to_save_cached_data }}
-          source: {{ module_for_compute }}
-          operations: {{ List of methods of form: ? = func(data_source,data_sources)}}
-          variable_list: {{ list of variables to include in analysis (might be derived) }}
-          [ climo_time_periods: {{ list of climatological time periods to plot (e.g. ANN, DJF, etc) }} ]
-          data_sources:
-            data_source:
-              source:
-              open_dataset:
+        Configuration of AnalysisElement must be laid out as follows:
 
+        # self._config_dict
+            keep_figs: False
+            plot_format: png
+            cache_data: False
+            cache_dir: None # only required if cache_data is true
+            reference: None # Not all plot types show comparison to reference
+            plot_bias: False # Not all plot types can include a difference
+            stats_in_title: False # Not all plot types have meaningful statistics to print
+            dirout: {{ path_to_write_plot_files }}
+            cache_dir: {{ path_to_save_cached_data }}
 
-        data_sources: a collection of data_sources;
-        data_source: stores attributes of the data_source, specified in the yaml file.
+        # self._ds_dict (need at least one data source in list)
+            - ds_one
+            - ds_two
+            - ds_three
+
+        # self._var_dict (need at least one variable in list)
+            - var_one
+            - var_two
+            - var_three
+
+        # self._analysis_dict
+            op: operation to perform
+            sources: # need at least one source
+                - ds_one
+                - ds_two
+                - ds_three
+
         """
-        if not self._config_dict:
-            raise ValueError("configuration dictionary is empty")
-        if not isinstance(self._config_dict, dict):
-            raise TypeError("configuration dictionary is not a dictionary")
+        self.logger.info("Checking contents of %s", self.analysis_sname)
 
-        self.logger.info("Checking contents of %s", self._config_key)
-        # Check for required fields in top level analysis element
-        if not self.cache_data:
-            self._config_dict['cache_dir'] = None
-        expected_keys = ['dirout', 'cache_dir', 'source', 'data_sources', 'operations']
-        for expected_key in expected_keys:
-            if  expected_key not in self._config_dict:
-                raise KeyError("Can not find '%s' in '%s' section of configuration" %
-                               (expected_key, self._config_key))
+        # Set up lists of required fields for self._config_dict and self._analysis_dict
+        consistency_dict = dict()
+        consistency_dict['_config_dict'] = ['keep_figs', 'plot_format', 'cache_data', 'reference',
+                                            'plot_bias', 'stats_in_title', 'dirout']
+        if self._config_dict['cache_data']:
+            consistency_dict['config_dict'].append('cache_dir')
+        consistency_dict['_analysis_dict'] = ['op', 'sources']
+
+        for dict_name, expected_keys in consistency_dict.items():
+            for expected_key in expected_keys:
+                if  expected_key not in getattr(self, dict_name):
+                    raise KeyError("Can not find '%s' in '%s' section of configuration" %
+                                (expected_key, dict_name))
+
         # Check for required fields in data_sources
-        for data_source in self._config_dict['data_sources']:
+        for data_source in self._ds_dict:
             for expected_key in ['source', 'open_dataset']:
-                if expected_key not in self._config_dict['data_sources'][data_source]:
+                if expected_key not in self._ds_dict[data_source]:
                     raise KeyError("Can not find '%s' in '%s' section of data_sources" %
                                    (expected_key, data_source))
-        self.logger.info("Contents of %s contain all necessary data", self._config_key)
+        self.logger.info("Contents of %s contain all necessary data", self.analysis_sname)
 
-    def _open_datasets(self, is_climo):
-        pass
+    # Drop is_climo, since we may be opening multiple datasets depending on requested analyses
+    def _open_datasets(self):
+        raise NotImplementedError('_open_datasets needs to be defined in child classes')
