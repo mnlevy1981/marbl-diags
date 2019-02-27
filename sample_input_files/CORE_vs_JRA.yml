@@ -1,9 +1,5 @@
 global_config:
    dirout: /glade/scratch/mlevy/BGC_diag_plots_CORE_JRA/plots
-   plot_format: 'png'
-   grid: POP_gx1v7 # grid on which to conduct the analysis
-   plot_bias: True
-   stats_in_title: True
 
 data_sources:
    datasets.yml:
@@ -11,14 +7,17 @@ data_sources:
       - CORE_1st_cycle
       - CORE_5th_cycle
 
-variables: variables.yml
+variable_definitions: variables.yml
 
 analysis:
-   JRA_vs_CORE:
-      op: plot_ann_climo
-      sources:
-         - JRA_1st_cycle
-         - CORE_1st_cycle
-         - CORE_5th_cycle
-      config:
+   3d_ann_climo_maps_on_levels:
+      _settings:
+         grid: POP_gx1v7
+         plot_diff_from_reference: True
+         levels: [0]
+      JRA_vs_CORE:
+         sources:
+            - JRA_1st_cycle
+            - CORE_1st_cycle
+            - CORE_5th_cycle
          reference: JRA_1st_cycle

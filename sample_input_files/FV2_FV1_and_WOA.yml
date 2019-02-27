@@ -1,5 +1,5 @@
 global_config:
-   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay.take2/plots
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/plots
    plot_format: 'png'
    levels: [0]
 
