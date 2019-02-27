@@ -19,14 +19,17 @@ def _parse_args():
     # Input file
     parser.add_argument('-i', '--input_file', action='store', dest='input_file', required=True,
                         help='YAML file defining analysis element(s) and data sources')
+    parser.add_argument('-d', '--debug', action='store_true', dest='debug', required=False,
+                        help='Write additional messages to stdout')
 
     return parser.parse_args()
 
 #######################################
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(levelname)s (%(funcName)s): %(message)s', level=logging.DEBUG)
     args = _parse_args()
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(format='%(levelname)s (%(funcName)s): %(message)s', level=log_level)
 
     with open(args.input_file) as file_in:
         full_input = yaml.load(file_in)

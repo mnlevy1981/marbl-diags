@@ -82,7 +82,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
     for v in AnalysisElement._analysis_dict['variables']:
 
         nrow, ncol = pt.get_plot_dims(plt_count)
-        AnalysisElement.logger.info('dimensioning plot canvas: %d x %d (%d total plots)',
+        AnalysisElement.logger.debug('dimensioning plot canvas: %d x %d (%d total plots)',
                          nrow, ncol, plt_count)
 
         #-- loop over time periods

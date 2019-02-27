@@ -65,14 +65,14 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                     data_source,
                     climo_str)
                 if os.path.exists(self._cached_locations[data_source]):
-                    self.logger.info('Opening %s', self._cached_locations[data_source])
+                    self.logger.debug('Reading %s', self._cached_locations[data_source])
                     self.data_sources[data_source] = data_source_classes.CachedClimoData(
                         data_root=self._cached_locations[data_source],
                         var_dict_in=self._cached_var_dicts[data_source],
                         data_type='zarr',
                         **self._ds_dict[data_source])
             else:
-                self.logger.info('Opening %s', self._ds_dict[data_source]['source'])
+                self.logger.debug('Reading %s output', self._ds_dict[data_source]['source'])
                 if self._ds_dict[data_source]['source'] == 'cesm':
                     self.data_sources[data_source] = data_source_classes.CESMData(
                         **self._ds_dict[data_source])
@@ -83,7 +83,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 else:
                     raise ValueError("Unknown source '%s'" %
                                      self._ds_dict[data_source]['source'])
-            self.logger.info('ds = %s', self.data_sources[data_source].ds)
+            self.logger.debug('ds = %s', self.data_sources[data_source].ds)
 
         # Call any necessary operations on datasets
         self._operate_on_datasets()
@@ -96,7 +96,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 self.logger.info('Computing %s on %s', op, data_source)
                 func = getattr(self.data_sources[data_source], op)
                 func()
-                self.logger.info('ds = %s', self.data_sources[data_source].ds)
+                self.logger.debug('ds = %s', self.data_sources[data_source].ds)
 
                 # write to cache
                 if self._config_dict['cache_data']:

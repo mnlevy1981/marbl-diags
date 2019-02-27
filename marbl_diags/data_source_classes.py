@@ -15,7 +15,7 @@ class CachedClimoData(GenericDataSource):
         self._get_dataset(data_root, data_type)
 
     def _get_dataset(self, data_root, data_type):
-        self.logger.info('calling _get_dataset, data_type = %s', data_type)
+        self.logger.debug('calling _get_dataset, data_type = %s', data_type)
         self._is_ann_climo = False
         self._is_mon_climo = True
         if data_type == 'zarr':
@@ -25,7 +25,7 @@ class CachedClimoData(GenericDataSource):
         if not os.path.exists(self._var_dict_in):
             raise FileNotFoundError('Can not find %s' % self._var_dict_in)
 
-        self.logger.info('Getting cached variable dictionary from %s', self._var_dict_in)
+        self.logger.debug('Getting cached variable dictionary from %s', self._var_dict_in)
         with open(self._var_dict_in) as file_in:
             self._var_dict = json.load(file_in)
         del self._var_dict_in
@@ -68,9 +68,9 @@ class CESMData(GenericDataSource):
                 file_name_pattern.append('{}/{}.{}.{}.nc'.format(dirin, case, stream, date_str))
             self._list_files(file_name_pattern)
 
-            self.logger.info('Opening %d files: ', len(self._files))
+            self.logger.debug('Opening %d files: ', len(self._files))
             for n, file_name in enumerate(self._files): # pylint: disable=invalid-name
-                self.logger.info('%d: %s', n+1, file_name)
+                self.logger.debug('%d: %s', n+1, file_name)
 
             self.ds = xr.open_mfdataset(self._files, **xr_open_ds)
 
@@ -106,9 +106,9 @@ class CESMData(GenericDataSource):
                 file_name_pattern.append('{}/{}.{}.nc'.format(dirin, stream, date_str))
             self._list_files(file_name_pattern)
 
-            self.logger.info('Opening %d files: ', len(self._files))
+            self.logger.debug('Opening %d files: ', len(self._files))
             for n, file_name in enumerate(self._files): # pylint: disable=invalid-name
-                self.logger.info('%d: %s', n+1, file_name)
+                self.logger.debug('%d: %s', n+1, file_name)
 
             self.ds = xr.open_mfdataset(self._files, **xr_open_ds)
 
@@ -212,7 +212,7 @@ class WOAData(GenericDataSource):
 
         if filename:
             self._files = os.path.join(dirin, filename)
-            self.logger.info("Reading {}".format(self._files))
+            self.logger.debug("Reading {}".format(self._files))
             self.ds = xr.open_dataset(self._files, decode_times=False)
             self.ds.rename({'depth': 'z_t'}, inplace=True)
         else:
