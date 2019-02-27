@@ -35,7 +35,7 @@ if __name__ == "__main__":
         full_input = yaml.load(file_in)
     # Check for correct keys
     err_found = False
-    for key in ['config', 'data_sources', 'variables', 'analysis']:
+    for key in ['global_config', 'data_sources', 'variables', 'analysis']:
         if key not in full_input:
             err_found = True
             print("ERROR: can not find {} key in {}".format(key, args.input_file))
@@ -56,22 +56,13 @@ if __name__ == "__main__":
             del(ds_dict_in)
 
     # Create dictionary of variables from requested files
-    var_dict = dict()
-    for var_file in full_input['variables']:
-        with open(var_file) as file_in:
-            var_dict_in = yaml.load(file_in)
-            for var_name in full_input['variables'][var_file]:
-                if var_name not in var_dict_in:
-                    raise KeyError("Can not find {} in {}".format(var_name, var_file))
-                if var_name in var_dict:
-                    raise KeyError("Variable named {} has already been processed".format(var_name))
-                var_dict[var_name] = dict(var_dict_in[var_name])
-            del(var_dict_in)
+    with open(full_input['variables']) as file_in:
+        var_dict = yaml.load(file_in)
 
     AnalysisElements = dict()
     for analysis_sname, analysis_dict in full_input['analysis'].items():
         AnalysisElements[analysis_sname] = \
             analysis_elements_class.AnalysisElements(analysis_sname, analysis_dict, ds_dict,
-                                                     var_dict, full_input['config'])
+                                                     var_dict, full_input['global_config'])
     for AnalysisElement in AnalysisElements.values():
         AnalysisElement.do_analysis()

@@ -9,10 +9,10 @@ from .generic_classes import GenericAnalysisElement
 
 class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object-inheritance,too-few-public-methods
 
-    def __init__(self, analysis_sname, analysis_dict, ds_dict, var_dict, config_dict):
+    def __init__(self, analysis_sname, analysis_dict, ds_dict, var_dict, global_config):
         """ Determine if operators require monthly climatology """
 
-        super(AnalysisElements, self).__init__(analysis_sname, analysis_dict, ds_dict, var_dict, config_dict)
+        super(AnalysisElements, self).__init__(analysis_sname, analysis_dict, ds_dict, var_dict, global_config)
 
         # Is this analysis a climatology?
         # This needs to be preceded (or replaced?) with a consistency check
@@ -34,19 +34,19 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
         if 'climo' in self._analysis_dict['op']:
             is_climo=True
             if 'climo_time_periods' in self._analysis_dict['config']:
-                self._config_dict['climo_time_periods'] =  self._analysis_dict['config']['climo_time_periods']
+                self._global_config['climo_time_periods'] =  self._analysis_dict['config']['climo_time_periods']
             else:
                 if 'ann_climo' in self._analysis_dict['op']:
-                    self._config_dict['climo_time_periods'] = ['ANN']
+                    self._global_config['climo_time_periods'] = ['ANN']
                 elif 'mon_climo' in self._analysis_dict['op']:
-                    self._config_dict['climo_time_periods'] = ['ANN', 'DJF', 'MAM', 'JJA', 'SON']
+                    self._global_config['climo_time_periods'] = ['ANN', 'DJF', 'MAM', 'JJA', 'SON']
                 else:
                     raise ValueError("'{}' is not a valid operation".format(self._analysis_dict['op']))
 
         self.data_sources = dict()
         for data_source in self._ds_dict:
             self.logger.info("Creating data object for %s in %s", data_source, self.analysis_sname)
-            if self._config_dict['cache_data']:
+            if self._global_config['cache_data']:
                 self._cached_locations = dict()
                 self._cached_var_dicts = dict()
                 if is_climo:
@@ -54,13 +54,13 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 else:
                     climo_str = 'no_climo'
                 self._cached_locations[data_source] = "{}/{}.{}.{}.{}".format(
-                    self._config_dict['cache_dir'],
+                    self._global_config['cache_dir'],
                     self.analysis_sname,
                     data_source,
                     climo_str,
                     'zarr')
                 self._cached_var_dicts[data_source] = "{}/{}.{}.{}.json".format(
-                    self._config_dict['cache_dir'],
+                    self._global_config['cache_dir'],
                     self.analysis_sname,
                     data_source,
                     climo_str)
@@ -99,7 +99,7 @@ class AnalysisElements(GenericAnalysisElement): # pylint: disable=useless-object
                 self.logger.debug('ds = %s', self.data_sources[data_source].ds)
 
                 # write to cache
-                if self._config_dict['cache_data']:
+                if self._global_config['cache_data']:
                     if not (self.data_sources[data_source]._is_mon_climo or self.data_sources[data_source]._is_ann_climo):
                         self.data_sources[data_source].cache_dataset(self._cached_locations[data_source],
                                                                    self._cached_var_dicts[data_source])

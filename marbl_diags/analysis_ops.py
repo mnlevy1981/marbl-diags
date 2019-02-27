@@ -46,21 +46,21 @@ def plot_mon_climo(AnalysisElement):
 def _plot_climo(AnalysisElement, valid_time_dims):
     """ Regardless of data source, generate plots """
     # look up grid (move to known grids database)
-    if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+    if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
         # and is tracer....
         depth_coord_name = 'z_t'
     else:
         raise ValueError('unknown grid')
 
     # where will plots be written?
-    if not os.path.exists(AnalysisElement._config_dict['dirout']):
-        call(['mkdir', '-p', AnalysisElement._config_dict['dirout']])
+    if not os.path.exists(AnalysisElement._global_config['dirout']):
+        call(['mkdir', '-p', AnalysisElement._global_config['dirout']])
 
     # identify reference (if any provided)
     ref_data_source_name = None
-    if AnalysisElement._config_dict['reference']:
+    if AnalysisElement._global_config['reference']:
         for data_source_name in AnalysisElement._analysis_dict['sources']:
-            if AnalysisElement._config_dict['reference'] == data_source_name:
+            if AnalysisElement._global_config['reference'] == data_source_name:
                 ref_data_source_name = data_source_name
     if ref_data_source_name:
         AnalysisElement.logger.info("Reference dataset: '%s'", ref_data_source_name)
@@ -74,7 +74,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
         data_source_name_list = [ref_data_source_name] + \
                                 [data_source_name for data_source_name in data_source_name_list
                                     if data_source_name != ref_data_source_name]
-        if AnalysisElement._config_dict['plot_bias']:
+        if AnalysisElement._global_config['plot_bias']:
             plt_count = 2*plt_count - 1
             bias_field = dict()
 
@@ -86,9 +86,9 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                          nrow, ncol, plt_count)
 
         #-- loop over time periods
-        for time_period in AnalysisElement._config_dict['climo_time_periods']:
+        for time_period in AnalysisElement._global_config['climo_time_periods']:
 
-            for sel_z in AnalysisElement._config_dict['depth_list']:
+            for sel_z in AnalysisElement._global_config['depth_list']:
 
                 #-- build indexer for depth
                 if isinstance(sel_z, list): # fragile?
@@ -127,22 +127,22 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                     else:
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
 
-                    if ref_data_source_name and AnalysisElement._config_dict['plot_bias'] and ds_name != ref_data_source_name:
+                    if ref_data_source_name and AnalysisElement._global_config['plot_bias'] and ds_name != ref_data_source_name:
                         bias_field[ds_name] = field - AnalysisElement.data_sources[ref_data_source_name].ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
 
                     if is_depth_range:
                         field = field.mean(depth_coord_name)
-                        if ref_data_source_name and AnalysisElement._config_dict['plot_bias']:
+                        if ref_data_source_name and AnalysisElement._global_config['plot_bias']:
                             if ds_name != ref_data_source_name:
                                 bias_field[ds_name] = bias_field[ds_name].mean(depth_coord_name)
 
                     # Get stats (probably refactor this at some point)
 
                     ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
-                    AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                    AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._global_config['stats_in_title'])
                     AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
 
-                    if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+                    if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
                     levels = AnalysisElement._var_dict[v]['contours']['levels']
                     cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
@@ -156,15 +156,15 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                                    linewidths=0.5, colors='k')
                     del(field)
 
-                    if ref_data_source_name and AnalysisElement._config_dict['plot_bias']:
+                    if ref_data_source_name and AnalysisElement._global_config['plot_bias']:
                         AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
                         if ds_name != ref_data_source_name:
                             j = i + len(data_source_name_list) - 1
                             ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1, projection=ccrs.Robinson(central_longitude=305.0))
-                            AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} - {}".format(ds_name, ref_data_source_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._config_dict['stats_in_title'])
+                            AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} - {}".format(ds_name, ref_data_source_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._global_config['stats_in_title'])
                             AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
 
-                            if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
+                            if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
                                 lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, bias_field[ds_name])
                             levels = AnalysisElement._var_dict[v]['contours']['bias_levels']
                             cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
@@ -179,20 +179,20 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                             AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][j])
 
                 AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
-                if not (ref_data_source_name and AnalysisElement._config_dict['plot_bias']):
+                if not (ref_data_source_name and AnalysisElement._global_config['plot_bias']):
                     cax = plt.axes((0.93, 0.15, 0.02, 0.7))
                     AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
 
-                if AnalysisElement._config_dict['plot_format']:
-                    AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement._config_dict['dirout'],
+                if AnalysisElement._global_config['plot_format']:
+                    AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement._global_config['dirout'],
                                                   plot_name,
-                                                  AnalysisElement._config_dict['plot_format']),
-                                bbox_inches='tight', dpi=300, format=AnalysisElement._config_dict['plot_format'])
+                                                  AnalysisElement._global_config['plot_format']),
+                                bbox_inches='tight', dpi=300, format=AnalysisElement._global_config['plot_format'])
                 plt.close(AnalysisElement.fig[plot_name])
-                if not AnalysisElement._config_dict['keep_figs']:
+                if not AnalysisElement._global_config['keep_figs']:
                     del(AnalysisElement.fig[plot_name])
                     (AnalysisElement.axs[plot_name])
-    if not AnalysisElement._config_dict['keep_figs']:
+    if not AnalysisElement._global_config['keep_figs']:
         del(AnalysisElement.fig)
         (AnalysisElement.axs)
 

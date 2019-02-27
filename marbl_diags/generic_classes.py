@@ -107,13 +107,13 @@ class GenericAnalysisElement(object):
         * variables: variables[var_name] is a list of alternative names for the variable
                      E.g. variables['nitrate'] = ['NO3', 'n_an']
     """
-    def __init__(self, analysis_sname, analysis_dict, ds_dict, var_dict, config_dict):
+    def __init__(self, analysis_sname, analysis_dict, ds_dict, var_dict, global_config):
         """ construct class object based on config_file_in (YAML format) """
         if 'config' not in analysis_dict:
             analysis_dict['config'] = dict()
         analysis_sname = analysis_sname
 
-        # Set default values for _config_dict
+        # Set default values for _global_config
         config_defaults = dict()
         config_defaults['dirout'] = None
         config_defaults['reference'] = None
@@ -129,25 +129,25 @@ class GenericAnalysisElement(object):
         self.logger = logging.getLogger(analysis_sname)
         self.analysis_sname = analysis_sname
 
-        # Populate _config_dict
-        self._config_dict = dict()
+        # Populate _global_config
+        self._global_config = dict()
         # (1) If present in analysis_dict['config'] use that value
-        # (2) Otherwise, if present in config_dict use that value
+        # (2) Otherwise, if present in global_config use that value
         # (3) Otherwise use value from config_defaults
         for config_opt in config_defaults:
             if config_opt in analysis_dict['config']:
-                self._config_dict[config_opt] = analysis_dict['config'][config_opt]
-            elif config_opt in config_dict:
-                self._config_dict[config_opt] = config_dict[config_opt]
+                self._global_config[config_opt] = analysis_dict['config'][config_opt]
+            elif config_opt in global_config:
+                self._global_config[config_opt] = global_config[config_opt]
             else:
-                self._config_dict[config_opt] = config_defaults[config_opt]
+                self._global_config[config_opt] = config_defaults[config_opt]
 
         # No default for cache_dir, this needs to be set by user if cache_data is True
-        if self._config_dict['cache_data']:
+        if self._global_config['cache_data']:
             if 'cache_dir' in analysis_dict['config']:
-                self._config_dict['cache_dir'] = analysis_dict['config']['cache_dir']
-            elif 'cache_dir' in config_dict:
-                self._config_dict['cache_dir'] = config_dict['cache_dir']
+                self._global_config['cache_dir'] = analysis_dict['config']['cache_dir']
+            elif 'cache_dir' in global_config:
+                self._global_config['cache_dir'] = global_config['cache_dir']
 
         self._var_dict = var_dict
         self._analysis_dict = analysis_dict
@@ -170,7 +170,7 @@ class GenericAnalysisElement(object):
         """
         Configuration of AnalysisElement must be laid out as follows:
 
-        # self._config_dict
+        # self._global_config
             keep_figs: False
             plot_format: png
             cache_data: False
@@ -201,12 +201,12 @@ class GenericAnalysisElement(object):
         """
         self.logger.info("Checking contents of %s", self.analysis_sname)
 
-        # Set up lists of required fields for self._config_dict and self._analysis_dict
+        # Set up lists of required fields for self._global_config and self._analysis_dict
         consistency_dict = dict()
-        consistency_dict['_config_dict'] = ['keep_figs', 'plot_format', 'cache_data', 'reference',
+        consistency_dict['_global_config'] = ['keep_figs', 'plot_format', 'cache_data', 'reference',
                                             'plot_bias', 'stats_in_title', 'dirout']
-        if self._config_dict['cache_data']:
-            consistency_dict['config_dict'].append('cache_dir')
+        if self._global_config['cache_data']:
+            consistency_dict['global_config'].append('cache_dir')
         consistency_dict['_analysis_dict'] = ['op', 'sources']
 
         for dict_name, expected_keys in consistency_dict.items():
