@@ -84,6 +84,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
         nrow, ncol = pt.get_plot_dims(plt_count)
         AnalysisElement.logger.debug('dimensioning plot canvas: %d x %d (%d total plots)',
                          nrow, ncol, plt_count)
+        var_in_ref = True
 
         #-- loop over time periods
         for time_period in AnalysisElement._global_config['climo_time_periods']:
@@ -112,22 +113,35 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                 AnalysisElement.axs[plot_name] = np.empty(ncol*nrow, dtype=type(None))
                 AnalysisElement.fig[plot_name].suptitle("{} at {}".format(v, depth_str))
 
-                # Plot climo state
-                for i, ds_name in enumerate(data_source_name_list):
+                # Plot climo state (don't use enumerate to avoid incrementing missing datasets)
+                i = -1
+                for ds_name in data_source_name_list:
 
                     ds = AnalysisElement.data_sources[ds_name].ds
                     #-- need to deal with time dimension here....
 
-                    # Find appropriate variable name in dataset
+                    # Find appropriate variable name in dataset or move to next dataset
+                    if v not in AnalysisElement.data_sources[ds_name]._var_dict:
+                        AnalysisElement.logger.info('Can not find %s in %s, skipping plot', v, ds_name)
+                        if ds_name == ref_data_source_name:
+                            var_in_ref = False
+                        continue
                     var_name = AnalysisElement.data_sources[ds_name]._var_dict[v]
                     if var_name not in ds:
-                        raise KeyError('Can not find {} in {}'.format(var_name, ds_name))
+                        AnalysisElement.logger.info('Can not find %s in %s, skipping plot', var_name, ds_name)
+                        if ds_name == ref_data_source_name:
+                            var_in_ref = False
+                        continue
+                    # data found => increment plot counter
+                    i = i+1
+
                     if time_period in valid_time_dims[ds_name]:
                         field = ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
                     else:
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
 
-                    if ref_data_source_name and AnalysisElement._global_config['plot_bias'] and ds_name != ref_data_source_name:
+                    plot_bias = ref_data_source_name and AnalysisElement._global_config['plot_bias']
+                    if plot_bias and ds_name != ref_data_source_name and var_in_ref:
                         bias_field[ds_name] = field - AnalysisElement.data_sources[ref_data_source_name].ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
 
                     if is_depth_range:
@@ -135,8 +149,6 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                         if ref_data_source_name and AnalysisElement._global_config['plot_bias']:
                             if ds_name != ref_data_source_name:
                                 bias_field[ds_name] = bias_field[ds_name].mean(depth_coord_name)
-
-                    # Get stats (probably refactor this at some point)
 
                     ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
                     AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._global_config['stats_in_title'])
@@ -156,9 +168,9 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                                    linewidths=0.5, colors='k')
                     del(field)
 
-                    if ref_data_source_name and AnalysisElement._global_config['plot_bias']:
+                    if plot_bias:
                         AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
-                        if ds_name != ref_data_source_name:
+                        if ds_name != ref_data_source_name and var_in_ref:
                             j = i + len(data_source_name_list) - 1
                             ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1, projection=ccrs.Robinson(central_longitude=305.0))
                             AnalysisElement.axs[plot_name][j] = _gen_plot_panel(ax, "{} - {}".format(ds_name, ref_data_source_name), bias_field[ds_name], ds['TAREA'], AnalysisElement._global_config['stats_in_title'])

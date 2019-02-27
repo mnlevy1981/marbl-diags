@@ -16,14 +16,6 @@ variables: variables.yml
 analysis:
    JRA_vs_CORE:
       op: plot_ann_climo
-      variables:
-         - nitrate
-         - phosphate
-         - oxygen
-         - silicate
-         - dic
-   #      - alkalinity
-         - iron
       sources:
          - JRA_1st_cycle
          - CORE_1st_cycle
