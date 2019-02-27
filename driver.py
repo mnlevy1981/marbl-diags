@@ -3,7 +3,7 @@
 
 import logging
 import yaml
-from marbl_diags import analysis_elements_class
+from marbl_diags import analysis_class
 
 #######################################
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         full_input = yaml.load(file_in)
     # Check for correct keys
     err_found = False
-    for key in ['global_config', 'data_sources', 'variables', 'analysis']:
+    for key in ['global_config', 'data_sources', 'variable_definitions', 'analysis']:
         if key not in full_input:
             err_found = True
             print("ERROR: can not find {} key in {}".format(key, args.input_file))
@@ -56,13 +56,13 @@ if __name__ == "__main__":
             del(ds_dict_in)
 
     # Create dictionary of variables from requested files
-    with open(full_input['variables']) as file_in:
+    with open(full_input['variable_definitions']) as file_in:
         var_dict = yaml.load(file_in)
 
-    AnalysisElements = dict()
-    for analysis_sname, analysis_dict in full_input['analysis'].items():
-        AnalysisElements[analysis_sname] = \
-            analysis_elements_class.AnalysisElements(analysis_sname, analysis_dict, ds_dict,
-                                                     var_dict, full_input['global_config'])
-    for AnalysisElement in AnalysisElements.values():
-        AnalysisElement.do_analysis()
+    AnalysisCategories = dict()
+    for category_name, analysis_dict in full_input['analysis'].items():
+        AnalysisCategories[category_name] = \
+            analysis_class.AnalysisCategory(category_name, analysis_dict, ds_dict,
+                                            var_dict, full_input['global_config'])
+    for AnalysisCategory in AnalysisCategories.values():
+        AnalysisCategory.do_analysis()

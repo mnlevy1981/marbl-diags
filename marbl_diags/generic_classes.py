@@ -7,6 +7,8 @@ from subprocess import call
 from datetime import datetime
 import esmlab
 
+######################################################################
+
 class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     """ Class containing functions used regardless of data source """
     def __init__(self, child_class=None, **kwargs):
@@ -99,6 +101,8 @@ class GenericDataSource(object): # pylint: disable=useless-object-inheritance
         """
         raise NotImplementedError('_set_var_dict needs to be defined in child classes')
 
+######################################################################
+
 class GenericAnalysisElement(object):
     """
     Objects in this class
@@ -107,122 +111,38 @@ class GenericAnalysisElement(object):
         * variables: variables[var_name] is a list of alternative names for the variable
                      E.g. variables['nitrate'] = ['NO3', 'n_an']
     """
-    def __init__(self, analysis_sname, analysis_dict, ds_dict, var_dict, global_config):
-        """ construct class object based on config_file_in (YAML format) """
-        if 'config' not in analysis_dict:
-            analysis_dict['config'] = dict()
-        analysis_sname = analysis_sname
-
-        # Set default values for _global_config
-        config_defaults = dict()
-        config_defaults['dirout'] = None
-        config_defaults['reference'] = None
-        config_defaults['plot_bias'] = False
-        config_defaults['cache_data'] = False
-        config_defaults['stats_in_title'] = False
-        config_defaults['plot_format'] = 'png'
-        config_defaults['keep_figs'] = False
-        config_defaults['grid'] = None
-        config_defaults['depth_list'] = [0]
+    def __init__(self, analysis_sname, analysis_dict, var_dict, config):
+        """ construct class object
+            * analysis_sname is unique identifier
+            * analysis_dict must contain sources, can also override values in config
+            * var_dict defines all variables
+            * config is full list of element configuration
+        """
 
         # Define logger on type and save analysis short name
         self.logger = logging.getLogger(analysis_sname)
         self.analysis_sname = analysis_sname
 
-        # Populate _global_config
+        # (1) Error check: analysis_dict keys are either "sources" or already in config
+        #                  ("sources" required)
+        if 'sources' not in analysis_dict:
+            raise KeyError("'{}' must contain 'sources'".format(analysis_sname))
+        for config_key in analysis_dict:
+            if config_key not in config and config_key != 'sources':
+                raise KeyError("'{}' is not a valid key in '{}'".format(config_key, analysis_sname))
+
+        # (2) Define sources and _global_config
+        self.sources = analysis_dict['sources']
         self._global_config = dict()
-        # (1) If present in analysis_dict['config'] use that value
-        # (2) Otherwise, if present in global_config use that value
-        # (3) Otherwise use value from config_defaults
-        for config_opt in config_defaults:
-            if config_opt in analysis_dict['config']:
-                self._global_config[config_opt] = analysis_dict['config'][config_opt]
-            elif config_opt in global_config:
-                self._global_config[config_opt] = global_config[config_opt]
+        for key in config:
+            if key in analysis_dict:
+                self._global_config[key] = analysis_dict[key]
             else:
-                self._global_config[config_opt] = config_defaults[config_opt]
+                self._global_config[key] = config[key]
 
-        # No default for cache_dir, this needs to be set by user if cache_data is True
-        if self._global_config['cache_data']:
-            if 'cache_dir' in analysis_dict['config']:
-                self._global_config['cache_dir'] = analysis_dict['config']['cache_dir']
-            elif 'cache_dir' in global_config:
-                self._global_config['cache_dir'] = global_config['cache_dir']
-
+        # (3) Define _var_dict
         self._var_dict = var_dict
-        self._analysis_dict = analysis_dict
-        if 'variables' not in self._analysis_dict.keys():
-            self._analysis_dict['variables'] = self._var_dict.keys()
-        self._ds_dict = ds_dict
 
-        # Set up objects for plotting
+        # (4) Set up objects for plotting
         self.fig = dict()
         self.axs = dict()
-
-        self._check()
-        self._open_datasets()
-
-    ####################
-    # PRIVATE ROUTINES #
-    ####################
-
-    def _check(self):
-        """
-        Configuration of AnalysisElement must be laid out as follows:
-
-        # self._global_config
-            keep_figs: False
-            plot_format: png
-            cache_data: False
-            cache_dir: None # only required if cache_data is true
-            reference: None # Not all plot types show comparison to reference
-            plot_bias: False # Not all plot types can include a difference
-            stats_in_title: False # Not all plot types have meaningful statistics to print
-            dirout: {{ path_to_write_plot_files }}
-            cache_dir: {{ path_to_save_cached_data }}
-
-        # self._ds_dict (need at least one data source in list)
-            - ds_one
-            - ds_two
-            - ds_three
-
-        # self._var_dict (need at least one variable in list)
-            - var_one
-            - var_two
-            - var_three
-
-        # self._analysis_dict
-            op: operation to perform
-            sources: # need at least one source
-                - ds_one
-                - ds_two
-                - ds_three
-
-        """
-        self.logger.info("Checking contents of %s", self.analysis_sname)
-
-        # Set up lists of required fields for self._global_config and self._analysis_dict
-        consistency_dict = dict()
-        consistency_dict['_global_config'] = ['keep_figs', 'plot_format', 'cache_data', 'reference',
-                                            'plot_bias', 'stats_in_title', 'dirout']
-        if self._global_config['cache_data']:
-            consistency_dict['global_config'].append('cache_dir')
-        consistency_dict['_analysis_dict'] = ['op', 'sources']
-
-        for dict_name, expected_keys in consistency_dict.items():
-            for expected_key in expected_keys:
-                if  expected_key not in getattr(self, dict_name):
-                    raise KeyError("Can not find '%s' in '%s' section of configuration" %
-                                (expected_key, dict_name))
-
-        # Check for required fields in data_sources
-        for data_source in self._ds_dict:
-            for expected_key in ['source', 'open_dataset']:
-                if expected_key not in self._ds_dict[data_source]:
-                    raise KeyError("Can not find '%s' in '%s' section of data_sources" %
-                                   (expected_key, data_source))
-        self.logger.info("Contents of %s contain all necessary data", self.analysis_sname)
-
-    # Drop is_climo, since we may be opening multiple datasets depending on requested analyses
-    def _open_datasets(self):
-        raise NotImplementedError('_open_datasets needs to be defined in child classes')

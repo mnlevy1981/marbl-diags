@@ -17,7 +17,7 @@ def plot_ann_climo(AnalysisElement):
     """ Regardless of data source, generate plots based on annual climatology"""
     # set up time dimension for averaging
     valid_time_dims = dict()
-    for ds_name in AnalysisElement._analysis_dict['sources']:
+    for ds_name in AnalysisElement.sources:
         # 1. data source needs time dimension of 1 or 12
         if AnalysisElement.data_sources[ds_name].ds.dims['time'] not in [1, 12]:
             raise ValueError("Dataset '{}' must have time dimension of 1 or 12".format(ds_name))
@@ -30,7 +30,7 @@ def plot_mon_climo(AnalysisElement):
     """ Regardless of data source, generate plots based on monthly climatology"""
     # set up time dimension for averaging
     valid_time_dims = dict()
-    for ds_name in AnalysisElement._analysis_dict['sources']:
+    for ds_name in AnalysisElement.sources:
         # 1. data source needs time dimension of 12
         if AnalysisElement.data_sources[ds_name].ds.dims['time'] != 12:
             raise ValueError("Dataset '{}' must have time dimension of 12".format(ds_name))
@@ -59,7 +59,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
     # identify reference (if any provided)
     ref_data_source_name = None
     if AnalysisElement._global_config['reference']:
-        for data_source_name in AnalysisElement._analysis_dict['sources']:
+        for data_source_name in AnalysisElement.sources:
             if AnalysisElement._global_config['reference'] == data_source_name:
                 ref_data_source_name = data_source_name
     if ref_data_source_name:
@@ -68,18 +68,18 @@ def _plot_climo(AnalysisElement, valid_time_dims):
         AnalysisElement.logger.info("No reference dataset specified")
 
     #-- loop over datasets
-    data_source_name_list = AnalysisElement._analysis_dict['sources']
+    data_source_name_list = AnalysisElement.sources
     plt_count = len(data_source_name_list)
     if ref_data_source_name:
         data_source_name_list = [ref_data_source_name] + \
                                 [data_source_name for data_source_name in data_source_name_list
                                     if data_source_name != ref_data_source_name]
-        if AnalysisElement._global_config['plot_bias']:
+        if AnalysisElement._global_config['plot_diff_from_reference']:
             plt_count = 2*plt_count - 1
             bias_field = dict()
 
     #-- loop over variables
-    for v in AnalysisElement._analysis_dict['variables']:
+    for v in AnalysisElement._global_config['variables']:
 
         nrow, ncol = pt.get_plot_dims(plt_count)
         AnalysisElement.logger.debug('dimensioning plot canvas: %d x %d (%d total plots)',
@@ -89,7 +89,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
         #-- loop over time periods
         for time_period in AnalysisElement._global_config['climo_time_periods']:
 
-            for sel_z in AnalysisElement._global_config['depth_list']:
+            for sel_z in AnalysisElement._global_config['levels']:
 
                 #-- build indexer for depth
                 if isinstance(sel_z, list): # fragile?
@@ -140,13 +140,13 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                     else:
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
 
-                    plot_bias = ref_data_source_name and AnalysisElement._global_config['plot_bias']
-                    if plot_bias and ds_name != ref_data_source_name and var_in_ref:
+                    plot_diff_from_reference = ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']
+                    if plot_diff_from_reference and ds_name != ref_data_source_name and var_in_ref:
                         bias_field[ds_name] = field - AnalysisElement.data_sources[ref_data_source_name].ds[var_name].sel(**indexer).isel(time=valid_time_dims[ds_name][time_period]).mean('time')
 
                     if is_depth_range:
                         field = field.mean(depth_coord_name)
-                        if ref_data_source_name and AnalysisElement._global_config['plot_bias']:
+                        if ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']:
                             if ds_name != ref_data_source_name:
                                 bias_field[ds_name] = bias_field[ds_name].mean(depth_coord_name)
 
@@ -168,7 +168,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                                    linewidths=0.5, colors='k')
                     del(field)
 
-                    if plot_bias:
+                    if plot_diff_from_reference:
                         AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
                         if ds_name != ref_data_source_name and var_in_ref:
                             j = i + len(data_source_name_list) - 1
@@ -191,7 +191,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                             AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][j])
 
                 AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
-                if not (ref_data_source_name and AnalysisElement._global_config['plot_bias']):
+                if not (ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']):
                     cax = plt.axes((0.93, 0.15, 0.02, 0.7))
                     AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
 

@@ -7,6 +7,8 @@ import json
 import xarray as xr
 from .generic_classes import GenericDataSource
 
+######################################################################
+
 class CachedClimoData(GenericDataSource):
     """ Class built around reading previously-cached data """
     def __init__(self, data_root, var_dict_in, data_type, **kwargs):
@@ -33,6 +35,8 @@ class CachedClimoData(GenericDataSource):
     def compute_mon_climatology(self):
         """ Cached data should already be climatology """
         pass
+
+######################################################################
 
 class CESMData(GenericDataSource):
     """ Class built around reading CESM history files """
@@ -170,6 +174,8 @@ class CESMData(GenericDataSource):
         self._var_dict['alkalinity'] = 'ALK'
         self._var_dict['iron'] = 'Fe'
 
+######################################################################
+
 class WOAData(GenericDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, var_dict, **kwargs):
@@ -273,6 +279,7 @@ class WOAData(GenericDataSource):
         """ WOA2013 data should already be climatology """
         pass
 
+######################################################################
 
 def woa_time_freq(freq):
     """ docstring """

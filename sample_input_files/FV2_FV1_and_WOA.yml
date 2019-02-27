@@ -1,13 +1,7 @@
-config:
+global_config:
    dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay.take2/plots
    plot_format: 'png'
-   # provide cache information if we marbl-diags invokes esmlab for ann mean / climatology / etc
-   # cache_data: True
-   #cache_dir: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/cached_data
-   #cache_fmt: zarr
-   grid: POP_gx1v7 # grid on which to conduct the analysis
-   plot_bias: True
-   stats_in_title: True
+   levels: [0]
 
 # Collections
 data_sources: # Where are we getting data from?
@@ -18,41 +12,26 @@ data_sources: # Where are we getting data from?
       - PI_control
       - FV2
 
-variables:
-   variables.yml:
-      - nitrate
-      - phosphate
-      - oxygen
-      - silicate
-      - dic
-      - alkalinity
-      - iron
+variable_definitions: variables.yml
 
 analysis:
-   PI_vs_FV2:
-      op: plot_ann_climo # Use ann_climo in data_source if found, otherwise compute from tseries or tslice
-      dim_requirements: # move into analysis_ops.py
-         - "time:ann_mean"
-      sources: # Queries into collections
-         - PI_control
-         - FV2
-      # override config settings on individual analysis level
-      config:
+   3d_ann_climo_maps_on_levels:
+      _settings:
+         grid: POP_gx1v7 # grid on which to conduct the analysis
+         plot_diff_from_reference: True
+         # Below are default variables (in code) for 3d_ann_climo_maps_on_levels
+         # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
+      PI_vs_FV2:
+         sources: # Queries into collections
+            - PI_control
+            - FV2
          reference: PI_control
-   WOA_vs_PI_vs_FV2:
-      op: plot_ann_climo # Use ann_climo in data_source if found, otherwise compute from tseries or tslice
-      sources:
-         - WOA2013
-         - PI_control
-         - FV2
-      variables: # Only necessary if a subset of main variable declaration
-         - nitrate
-         - phosphate
-         - oxygen
-         - silicate
-      config:
+      WOA_vs_PI_vs_FV2:
+         sources:
+            - WOA2013
+            - PI_control
+            - FV2
          reference: WOA2013
-
    # plot_regional_time_series: # Will require tseries or tslice in data_source
    #    dim_requirements: # move into analysis_ops.py
    #       - "nlat:mean"
