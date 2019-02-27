@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import cartopy
 import cartopy.crs as ccrs
 import esmlab
@@ -143,11 +144,12 @@ def _plot_climo(AnalysisElement, valid_time_dims):
 
                     if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
+                    levels = AnalysisElement._var_dict[v]['contours']['levels']
                     cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                                                    levels=AnalysisElement._var_dict[v]['contours']['levels'],
+                                                                    levels=levels,
                                                                     extend=AnalysisElement._var_dict[v]['contours']['extend'],
                                                                     cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
-                                                                    norm=pt.MidPointNorm(midpoint=AnalysisElement._var_dict[v]['contours']['midpoint']))
+                                                                    norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
                     cs = AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
                                                                    levels=AnalysisElement._var_dict[v]['contours']['levels'],
                                                                    extend=AnalysisElement._var_dict[v]['contours']['extend'],
@@ -164,9 +166,11 @@ def _plot_climo(AnalysisElement, valid_time_dims):
 
                             if AnalysisElement._config_dict['grid'] == 'POP_gx1v7':
                                 lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, bias_field[ds_name])
+                            levels = AnalysisElement._var_dict[v]['contours']['bias_levels']
                             cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                                                            levels=AnalysisElement._var_dict[v]['contours']['bias_levels'],
+                                                                            levels=levels,
                                                                             extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                            norm=colors.BoundaryNorm(boundaries=levels, ncolors=256),
                                                                             cmap='bwr')
                             cs = AnalysisElement.axs[plot_name][j].contour(cf, transform=ccrs.PlateCarree(),
                                                                            levels=AnalysisElement._var_dict[v]['contours']['bias_levels'],
