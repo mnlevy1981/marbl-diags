@@ -107,60 +107,71 @@ class AnalysisCategory(object):
     ####################
 
     def _open_datasets(self, element_key):
-        """ Open datasets requested by AnalysisElement(element_key) """
+        """ Open datasets requested by AnalysisElement[element_key] """
         AnalysisElement = self.AnalysisElements[element_key]
         # Determine if operator acts on climatology
-        is_climo = False
+        AnalysisElement.climo = None
         if 'climo' in self.operation:
-            is_climo=True
             if 'ann_climo' in self.operation:
-                AnalysisElement._global_config
+                AnalysisElement.climo = 'ann_climo'
             elif 'mon_climo' in self.operation:
-                AnalysisElement._global_config['climo_time_periods'] = ['ANN', 'DJF', 'MAM', 'JJA', 'SON']
+                AnalysisElement.climo = 'mon_climo'
             else:
                 raise ValueError("'{}' is not a valid operation".format(self.operation))
 
+        # AnalysisElement.datestrs details what years of data to read from each source
+        # E.g. {JRA: 0033-0052} => will be working with years 33 - 52 of CESM run using JRA forcing
+        # Data will be stored in AnalysisElement.data_sources['JRA.0033-0052']
+        # (AnalysisElement.data_sources is a new dictionary, can be thought of as intent(out))
         AnalysisElement.data_sources = dict()
-        for data_source in AnalysisElement.sources:
+        for data_source in AnalysisElement.datestrs:
             self.logger.info("Creating data object for %s in %s", data_source, element_key)
-            if AnalysisElement._global_config['cache_data']:
-                AnalysisElement._cached_locations = dict()
-                AnalysisElement._cached_var_dicts = dict()
-                if is_climo:
-                    climo_str = 'climo'
+
+            # (1) Save both datestr ('0033-0052') and data_source_key ('JRA.0033-0052')
+            data_source_labels = [data_source + '.' + datestr for datestr in AnalysisElement.datestrs[data_source]]
+            data_sources = dict(zip(AnalysisElement.datestrs[data_source], data_source_labels))
+
+            # (2) Read data from source
+            for datestr, data_source_label in data_sources.items():
+                # Is dataset already cached?
+                if AnalysisElement._global_config['cache_data']:
+                    AnalysisElement._cached_locations = dict()
+                    AnalysisElement._cached_var_dicts = dict()
+                    if AnalysisElement.climo:
+                        climo_str = AnalysisElement.climo
+                    else:
+                        climo_str = 'no_climo'
+                    AnalysisElement._cached_locations[data_source_label] = "{}/{}.{}.{}.{}".format(
+                        AnalysisElement._global_config['cache_dir'],
+                        AnalysisElement.category_name,
+                        datestr,
+                        climo_str,
+                        'zarr')
+                    AnalysisElement._cached_var_dicts[data_source_label] = "{}/{}.{}.{}.json".format(
+                        AnalysisElement._global_config['cache_dir'],
+                        AnalysisElement.category_name,
+                        datestr,
+                        climo_str)
+                    if os.path.exists(AnalysisElement._cached_locations[data_source_label]):
+                        AnalysisElement.logger.debug('Reading %s', AnalysisElement._cached_locations[data_source_label])
+                        AnalysisElement.data_sources[data_source_label] = data_source_classes.CachedClimoData(
+                            data_root=AnalysisElement._cached_locations[data_source_label],
+                            var_dict_in=AnalysisElement._cached_var_dicts[data_source_label],
+                            data_type='zarr',
+                            **self._ds_dict[data_source])
                 else:
-                    climo_str = 'no_climo'
-                AnalysisElement._cached_locations[data_source] = "{}/{}.{}.{}.{}".format(
-                    AnalysisElement._global_config['cache_dir'],
-                    AnalysisElement.category_name,
-                    data_source,
-                    climo_str,
-                    'zarr')
-                AnalysisElement._cached_var_dicts[data_source] = "{}/{}.{}.{}.json".format(
-                    AnalysisElement._global_config['cache_dir'],
-                    AnalysisElement.category_name,
-                    data_source,
-                    climo_str)
-                if os.path.exists(AnalysisElement._cached_locations[data_source]):
-                    AnalysisElement.logger.debug('Reading %s', AnalysisElement._cached_locations[data_source])
-                    AnalysisElement.data_sources[data_source] = data_source_classes.CachedClimoData(
-                        data_root=AnalysisElement._cached_locations[data_source],
-                        var_dict_in=AnalysisElement._cached_var_dicts[data_source],
-                        data_type='zarr',
-                        **self._ds_dict[data_source])
-            else:
-                self.logger.debug('Reading %s output', self._ds_dict[data_source]['source'])
-                if self._ds_dict[data_source]['source'] == 'cesm':
-                    AnalysisElement.data_sources[data_source] = data_source_classes.CESMData(
-                        **self._ds_dict[data_source])
-                elif self._ds_dict[data_source]['source'] in ['woa2005', 'woa2013']:
-                    AnalysisElement.data_sources[data_source] = data_source_classes.WOAData(
-                        var_dict=AnalysisElement._var_dict,
-                        **self._ds_dict[data_source])
-                else:
-                    raise ValueError("Unknown source '%s'" %
-                                     self._ds_dict[data_source]['source'])
-            self.logger.debug('ds = %s', AnalysisElement.data_sources[data_source].ds)
+                    self.logger.debug('Reading %s output', self._ds_dict[data_source]['source'])
+                    if self._ds_dict[data_source]['source'] == 'cesm':
+                        AnalysisElement.data_sources[data_source_label] = data_source_classes.CESMData(
+                            datestr, **self._ds_dict[data_source])
+                    elif self._ds_dict[data_source]['source'] in ['woa2005', 'woa2013']:
+                        AnalysisElement.data_sources[data_source_label] = data_source_classes.WOAData(
+                            var_dict=AnalysisElement._var_dict,
+                            **self._ds_dict[data_source])
+                    else:
+                        raise ValueError("Unknown source '%s'" %
+                                         self._ds_dict[data_source]['source'])
+                self.logger.debug('ds = %s', AnalysisElement.data_sources[data_source_label].ds)
 
         # Call any necessary operations on datasets
         AnalysisElement._operate_on_datasets(self.operation)

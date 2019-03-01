@@ -114,7 +114,8 @@ class GenericAnalysisElement(object):
     def __init__(self, analysis_sname, analysis_dict, var_dict, config):
         """ construct class object
             * analysis_sname is unique identifier
-            * analysis_dict must contain sources, can also override values in config
+            * analysis_dict must contain datestrs
+              - can also override values from argument passed in to config (e.g. levels)
             * var_dict defines all variables
             * config is full list of element configuration
         """
@@ -123,16 +124,20 @@ class GenericAnalysisElement(object):
         self.logger = logging.getLogger(analysis_sname)
         self.analysis_sname = analysis_sname
 
-        # (1) Error check: analysis_dict keys are either "sources" or already in config
-        #                  ("sources" required)
-        if 'sources' not in analysis_dict:
-            raise KeyError("'{}' must contain 'sources'".format(analysis_sname))
+        # (1) Error check: analysis_dict keys are either "datestrs" or already in config
+        #                  ("datestrs" required)
+        if 'datestrs' not in analysis_dict:
+            raise KeyError("'{}' must contain 'datestrs'".format(analysis_sname))
         for config_key in analysis_dict:
-            if config_key not in config and config_key != 'sources':
+            if config_key not in config and config_key != 'datestrs':
                 raise KeyError("'{}' is not a valid key in '{}'".format(config_key, analysis_sname))
 
-        # (2) Define sources and _global_config
-        self.sources = analysis_dict['sources']
+        # (2) Define datestrs and _global_config
+        self.datestrs = analysis_dict['datestrs']
+        #     - Force datestrs[data_source] to be a list
+        for data_source in self.datestrs:
+            if not isinstance(self.datestrs[data_source], list):
+                self.datestrs[data_source] = [self.datestrs[data_source]]
         self._global_config = dict()
         for key in config:
             if key in analysis_dict:

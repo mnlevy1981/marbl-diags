@@ -17,7 +17,7 @@ def plot_ann_climo(AnalysisElement):
     """ Regardless of data source, generate plots based on annual climatology"""
     # set up time dimension for averaging
     valid_time_dims = dict()
-    for ds_name in AnalysisElement.sources:
+    for ds_name in AnalysisElement.data_sources:
         # 1. data source needs time dimension of 1 or 12
         if AnalysisElement.data_sources[ds_name].ds.dims['time'] not in [1, 12]:
             raise ValueError("Dataset '{}' must have time dimension of 1 or 12".format(ds_name))
@@ -30,7 +30,7 @@ def plot_mon_climo(AnalysisElement):
     """ Regardless of data source, generate plots based on monthly climatology"""
     # set up time dimension for averaging
     valid_time_dims = dict()
-    for ds_name in AnalysisElement.sources:
+    for ds_name in AnalysisElement.data_sources:
         # 1. data source needs time dimension of 12
         if AnalysisElement.data_sources[ds_name].ds.dims['time'] != 12:
             raise ValueError("Dataset '{}' must have time dimension of 12".format(ds_name))
@@ -59,16 +59,17 @@ def _plot_climo(AnalysisElement, valid_time_dims):
     # identify reference (if any provided)
     ref_data_source_name = None
     if AnalysisElement._global_config['reference']:
-        for data_source_name in AnalysisElement.sources:
-            if AnalysisElement._global_config['reference'] == data_source_name:
-                ref_data_source_name = data_source_name
-    if ref_data_source_name:
-        AnalysisElement.logger.info("Reference dataset: '%s'", ref_data_source_name)
-    else:
+        for source, datestr in AnalysisElement._global_config['reference'].items():
+            ref_data_source_name = "{}.{}".format(source, datestr)
+        if ref_data_source_name in AnalysisElement.data_sources:
+            AnalysisElement.logger.info("Reference dataset: '%s'", ref_data_source_name)
+        else:
+            ref_data_source_name = None
+    if not ref_data_source_name:
         AnalysisElement.logger.info("No reference dataset specified")
 
     #-- loop over datasets
-    data_source_name_list = AnalysisElement.sources
+    data_source_name_list = AnalysisElement.data_sources.keys()
     plt_count = len(data_source_name_list)
     if ref_data_source_name:
         data_source_name_list = [ref_data_source_name] + \

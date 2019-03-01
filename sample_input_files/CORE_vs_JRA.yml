@@ -3,9 +3,8 @@ global_config:
 
 data_sources:
    datasets.yml:
-      - JRA_1st_cycle
-      - CORE_1st_cycle
-      - CORE_5th_cycle
+      - JRA
+      - CORE
 
 variable_definitions: variables.yml
 
@@ -16,8 +15,7 @@ analysis:
          plot_diff_from_reference: True
          levels: [0]
       JRA_vs_CORE:
-         sources:
-            - JRA_1st_cycle
-            - CORE_1st_cycle
-            - CORE_5th_cycle
-         reference: JRA_1st_cycle
+         datestrs:
+            JRA: 0033-0052
+            CORE: [0043-0062, 0291-0310]
+         reference: {JRA: 0033-0052}

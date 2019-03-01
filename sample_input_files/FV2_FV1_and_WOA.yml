@@ -22,16 +22,18 @@ analysis:
          # Below are default variables (in code) for 3d_ann_climo_maps_on_levels
          # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
       PI_vs_FV2:
-         sources: # Queries into collections
-            - PI_control
-            - FV2
-         reference: PI_control
+         datestrs: # Queries into collections
+            PI_control: 0271-0300
+            FV2: 0271-0300
+         reference:
+            PI_control: 0271-0300
       WOA_vs_PI_vs_FV2:
-         sources:
-            - WOA2013
-            - PI_control
-            - FV2
-         reference: WOA2013
+         datestrs:
+            WOA2013: None
+            PI_control: 0271-0300
+            FV2: 0271-0300
+         reference:
+            WOA2013: None
    # plot_regional_time_series: # Will require tseries or tslice in data_source
    #    dim_requirements: # move into analysis_ops.py
    #       - "nlat:mean"

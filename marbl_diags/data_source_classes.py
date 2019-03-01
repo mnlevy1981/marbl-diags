@@ -40,9 +40,15 @@ class CachedClimoData(GenericDataSource):
 
 class CESMData(GenericDataSource):
     """ Class built around reading CESM history files """
-    def __init__(self, **kwargs):
+    def __init__(self, datestr_in, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
-        self._get_dataset(**kwargs['open_dataset'])
+        gdargs = dict()
+        gdargs['filetype'] = 'ann_climo'
+        for key in kwargs['dataset_format'][gdargs['filetype']]:
+            gdargs[key] = kwargs['dataset_format'][gdargs['filetype']][key]
+        gdargs['case'] = kwargs['case']
+        gdargs['datestr'] = datestr_in
+        self._get_dataset(**gdargs)
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
@@ -181,7 +187,11 @@ class WOAData(GenericDataSource):
     def __init__(self, var_dict, **kwargs):
         super(WOAData, self).__init__(child_class='WOAData', **kwargs)
         self._set_woa_names()
-        self._get_dataset(var_dict, **kwargs['open_dataset'])
+        gdargs = dict()
+        gdargs['grid'] = kwargs['grid']
+        gdargs['freq'] = 'ann'
+        gdargs['dirin'] = kwargs["{}_climo".format(gdargs['freq'])]['dirin']
+        self._get_dataset(var_dict, **gdargs)
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
