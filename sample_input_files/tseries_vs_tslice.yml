@@ -1,47 +1,30 @@
-CESM2.1_PI-WOA2013-ann-comparison:
-   short_name: tseries-and-tslice
-   description: Comparing the CESM 2.1 preindustrial control to WOA2013
+global_config:
    dirout: /glade/scratch/mlevy/marbl-diag-out/plots
-   cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
-   source: ocean_diagnostics
-   grid: POP_gx1v7 # grid on which to conduct the analysis
    plot_format: 'png'
-   stats_in_title: True
-   operations:
-      - plot_ann_climo
-   variable_list:
-      - nitrate
-      - phosphate
-      - oxygen
-      - silicate
-   depth_list:
-      - 0.
-      - [200., 600.]
-      - [2000., 5000.] #,400.,1000.,slice(200.,600.),slice(0.,700.),slice(2000,5000),4500.]
-   reference: WOA2013
-   cache_data: True
-   data_sources:
-      b.e21.BW1850.f09_g17.CMIP6-piControl.001: # POP history files from CESM 2.1 control run
-         source: cesm
-         open_dataset:
-            filetype: hist
-            dirin: /glade/scratch/cmip6/archive/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/hist
-            case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-            stream: pop.h
-            datestr:
-               - 031[7-9]-??
-               - 032[0-6]-??
-      b.e21.BW1850.f09_g17.CMIP6-piControl.001.tseries: # Same as above, but converted to time series
-         source: cesm
-         open_dataset:
-            filetype: single_variable
-            dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/proc/tseries/month_1
-            case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-            stream: pop.h
-            datestr: 031701-032612
-      WOA2013:
-         source: woa2013
-         open_dataset:
-            dirin: /glade/work/mclong/woa2013v2
-            freq: mon
-            grid: POP_gx1v7
+   levels: [0]
+   variables: [nitrate, oxygen]
+
+# Collections
+data_sources: # Where are we getting data from?
+   datasets.yml:
+      # Can not contain same key as obs.yml!
+      - PI_control
+      - PI_tseries
+
+# TODO: move to intake / xcollection
+# intake_collection: [obs_datasets.yml, CESM_datasets.yml]
+
+variable_definitions: variables.yml
+
+analysis:
+   3d_ann_climo_maps_on_levels:
+      _settings:
+         grid: POP_gx1v7 # grid on which to conduct the analysis
+         # Below are default variables (in code) for 3d_ann_climo_maps_on_levels
+         # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
+      tavg_vs_tseries:
+         datestrs: # Queries into collections
+            PI_control: 0271-0300
+            PI_tseries: 031701-032612
+         reference:
+            PI_control: 0271-0300

@@ -22,6 +22,15 @@ CORE: # Matt Long's run
       time_series:
          dirin: /glade/scratch/mclong/archive/g.e21a01d.G1850ECOIAF.T62_g17.extraterr-fe.001/ocn/proc/tseries/month_1
          stream: pop.h
+PI_tseries: # POP history files from CESM 2.1 control run
+   source: cesm
+   grid: POP_gx1v7
+   case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
+   datestr: 031701-032612
+   dataset_format:
+      single_variable:
+         dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001/ocn/proc/tseries/month_1
+         stream: pop.h
 PI_control: # POP history files from CESM 2.1 control run
    source: cesm
    grid: POP_gx1v7

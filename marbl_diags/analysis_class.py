@@ -134,6 +134,7 @@ class AnalysisCategory(object):
             # (2) Read data from source
             for datestr, data_source_label in data_sources.items():
                 # Is dataset already cached?
+                still_unread = True
                 if AnalysisElement._global_config['cache_data']:
                     AnalysisElement._cached_locations = dict()
                     AnalysisElement._cached_var_dicts = dict()
@@ -143,13 +144,13 @@ class AnalysisCategory(object):
                         climo_str = 'no_climo'
                     AnalysisElement._cached_locations[data_source_label] = "{}/{}.{}.{}.{}".format(
                         AnalysisElement._global_config['cache_dir'],
-                        AnalysisElement.category_name,
+                        self.category_name,
                         datestr,
                         climo_str,
                         'zarr')
                     AnalysisElement._cached_var_dicts[data_source_label] = "{}/{}.{}.{}.json".format(
                         AnalysisElement._global_config['cache_dir'],
-                        AnalysisElement.category_name,
+                        self.category_name,
                         datestr,
                         climo_str)
                     if os.path.exists(AnalysisElement._cached_locations[data_source_label]):
@@ -159,10 +160,13 @@ class AnalysisCategory(object):
                             var_dict_in=AnalysisElement._cached_var_dicts[data_source_label],
                             data_type='zarr',
                             **self._ds_dict[data_source])
-                else:
+                        still_unread = False
+                if still_unread:
                     self.logger.debug('Reading %s output', self._ds_dict[data_source]['source'])
                     if self._ds_dict[data_source]['source'] == 'cesm':
                         AnalysisElement.data_sources[data_source_label] = data_source_classes.CESMData(
+                            AnalysisElement._global_config['variables'],
+                            AnalysisElement.climo,
                             datestr, **self._ds_dict[data_source])
                     elif self._ds_dict[data_source]['source'] in ['woa2005', 'woa2013']:
                         AnalysisElement.data_sources[data_source_label] = data_source_classes.WOAData(

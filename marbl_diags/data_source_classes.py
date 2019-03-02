@@ -40,10 +40,22 @@ class CachedClimoData(GenericDataSource):
 
 class CESMData(GenericDataSource):
     """ Class built around reading CESM history files """
-    def __init__(self, datestr_in, **kwargs):
+    def __init__(self, variables, operation, datestr_in, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
         gdargs = dict()
-        gdargs['filetype'] = 'ann_climo'
+        gdargs['variables'] = variables
+        # Set filetype depending on requested operation
+        if operation == "ann_climo":
+            if "ann_climo" in kwargs['dataset_format']:
+                gdargs['filetype'] = 'ann_climo'
+            elif "mon_climo" in kwargs['dataset_format']:
+                gdargs['filetype'] = 'mon_climo'
+            elif "single_variable" in kwargs['dataset_format']:
+                gdargs['filetype'] = 'single_variable'
+            else:
+                raise ValueError("Can not find appropriate filetype for %s", operation)
+        else:
+            raise ValueError("'%s' is an unknown operation", operation)
         for key in kwargs['dataset_format'][gdargs['filetype']]:
             gdargs[key] = kwargs['dataset_format'][gdargs['filetype']][key]
         gdargs['case'] = kwargs['case']
@@ -63,7 +75,7 @@ class CESMData(GenericDataSource):
             return
         super(CESMData, self).compute_mon_climatology()
 
-    def _get_dataset(self, filetype, dirin, case, stream, datestr):
+    def _get_dataset(self, filetype, dirin, case, stream, datestr, variables):
         """ docstring """
         xr_open_ds = {'decode_coords' : False, 'decode_times' : False, 'data_vars' : 'minimal'}
         if isinstance(datestr, str):
@@ -146,16 +158,16 @@ class CESMData(GenericDataSource):
             self._is_ann_climo = False
             self._is_mon_climo = False
             self.ds = xr.Dataset()
-            for variable in self._var_dict.values():
+            for variable in variables:
                 file_name_pattern = []
                 for date_str in datestr:
                     file_name_pattern.append('{}/{}.{}.{}.{}.nc'.format(
-                        dirin, case, stream, variable, date_str))
+                        dirin, case, stream, self._var_dict[variable], date_str))
                 self._list_files(file_name_pattern)
                 self.ds = xr.merge((self.ds, xr.open_mfdataset(self._files, **xr_open_ds)))
 
         else:
-            raise ValueError('Uknown format: %s' % filetype)
+            raise ValueError('Unknown format: %s' % filetype)
 
         # should this method handle making the 'time' variable functional?
         # (i.e., take mean of time_bound, convert to date object)
