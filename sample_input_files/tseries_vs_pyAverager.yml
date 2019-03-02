@@ -24,7 +24,7 @@ analysis:
          # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
       tavg_vs_tseries:
          datestrs: # Queries into collections
-            PI_control: 0271-0300
+            PI_control: 0317-0326
             PI_tseries: 031701-032612
          reference:
-            PI_control: 0271-0300
+            PI_control: 0317-0326
