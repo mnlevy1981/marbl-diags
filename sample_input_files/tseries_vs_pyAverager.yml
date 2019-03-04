@@ -1,15 +1,18 @@
 global_config:
    dirout: /glade/scratch/mlevy/marbl-diag-out/plots
    plot_format: 'png'
-   levels: [0, 2500, 4000]
+   levels: [0]
+   variables: [nitrate, oxygen]
 
 # Collections
 data_sources: # Where are we getting data from?
-   obs.yml:
-      - WOA2005
    datasets.yml:
       # Can not contain same key as obs.yml!
       - PI_control
+      - PI_tseries
+
+# TODO: move to intake / xcollection
+# intake_collection: [obs_datasets.yml, CESM_datasets.yml]
 
 variable_definitions: variables.yml
 
@@ -17,12 +20,11 @@ analysis:
    3d_ann_climo_maps_on_levels:
       _settings:
          grid: POP_gx1v7 # grid on which to conduct the analysis
-         plot_diff_from_reference: True
          # Below are default variables (in code) for 3d_ann_climo_maps_on_levels
          # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
-      woa2005-comp:
+      tavg_vs_tseries:
          datestrs: # Queries into collections
-            WOA2005: None
             PI_control: 0317-0326
+            PI_tseries: 031701-032612
          reference:
-            WOA2005: None
+            PI_control: 0317-0326

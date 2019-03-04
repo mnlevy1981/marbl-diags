@@ -7,6 +7,8 @@ from subprocess import call
 from datetime import datetime
 import esmlab
 
+######################################################################
+
 class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     """ Class containing functions used regardless of data source """
     def __init__(self, child_class=None, **kwargs):
@@ -99,6 +101,8 @@ class GenericDataSource(object): # pylint: disable=useless-object-inheritance
         """
         raise NotImplementedError('_set_var_dict needs to be defined in child classes')
 
+######################################################################
+
 class GenericAnalysisElement(object):
     """
     Objects in this class
@@ -107,74 +111,43 @@ class GenericAnalysisElement(object):
         * variables: variables[var_name] is a list of alternative names for the variable
                      E.g. variables['nitrate'] = ['NO3', 'n_an']
     """
-    def __init__(self, config_key, config_dict, var_dict, is_climo):
-        """ construct class object based on config_file_in (YAML format) """
-        # Set default values for _config_dict
-        defaults = dict()
-        defaults['reference'] = None
-        defaults['cache_data'] = False
-        defaults['stats_in_title'] = False
-        defaults['plot_format'] = 'png'
-        defaults['keep_figs'] = False
-        for config_opt in defaults:
-            if config_opt not in config_dict:
-                config_dict[config_opt] = defaults[config_opt]
-        # Read YAML configuration
-        self.logger = logging.getLogger(config_key)
-        self._config_key = config_key
-        self._config_dict = config_dict
+    def __init__(self, analysis_sname, analysis_dict, var_dict, config):
+        """ construct class object
+            * analysis_sname is unique identifier
+            * analysis_dict must contain datestrs
+              - can also override values from argument passed in to config (e.g. levels)
+            * var_dict defines all variables
+            * config is full list of element configuration
+        """
+
+        # Define logger on type and save analysis short name
+        self.logger = logging.getLogger(analysis_sname)
+        self.analysis_sname = analysis_sname
+
+        # (1) Error check: analysis_dict keys are either "datestrs" or already in config
+        #                  ("datestrs" required)
+        if 'datestrs' not in analysis_dict:
+            raise KeyError("'{}' must contain 'datestrs'".format(analysis_sname))
+        for config_key in analysis_dict:
+            if config_key not in config and config_key != 'datestrs':
+                raise KeyError("'{}' is not a valid key in '{}'".format(config_key, analysis_sname))
+
+        # (2) Define datestrs and _global_config
+        self.datestrs = analysis_dict['datestrs']
+        #     - Force datestrs[data_source] to be a list
+        for data_source in self.datestrs:
+            if not isinstance(self.datestrs[data_source], list):
+                self.datestrs[data_source] = [self.datestrs[data_source]]
+        self._global_config = dict()
+        for key in config:
+            if key in analysis_dict:
+                self._global_config[key] = analysis_dict[key]
+            else:
+                self._global_config[key] = config[key]
+
+        # (3) Define _var_dict
         self._var_dict = var_dict
-        self.reference = config_dict['reference']
-        self.cache_data = config_dict['cache_data']
-        self.data_sources = None
-        self._check()
-        self._open_datasets(is_climo)
 
-    ####################
-    # PRIVATE ROUTINES #
-    ####################
-
-    def _check(self):
-        """
-        Configuration file must be laid out as follows.
-        analysis_element:
-          description: {{ description_text }}
-          dirout: {{ path_to_write_plot_files }}
-          cache_dir: {{ path_to_save_cached_data }}
-          source: {{ module_for_compute }}
-          operations: {{ List of methods of form: ? = func(data_source,data_sources)}}
-          variable_list: {{ list of variables to include in analysis (might be derived) }}
-          [ climo_time_periods: {{ list of climatological time periods to plot (e.g. ANN, DJF, etc) }} ]
-          data_sources:
-            data_source:
-              source:
-              open_dataset:
-
-
-        data_sources: a collection of data_sources;
-        data_source: stores attributes of the data_source, specified in the yaml file.
-        """
-        if not self._config_dict:
-            raise ValueError("configuration dictionary is empty")
-        if not isinstance(self._config_dict, dict):
-            raise TypeError("configuration dictionary is not a dictionary")
-
-        self.logger.info("Checking contents of %s", self._config_key)
-        # Check for required fields in top level analysis element
-        if not self.cache_data:
-            self._config_dict['cache_dir'] = None
-        expected_keys = ['dirout', 'cache_dir', 'source', 'data_sources', 'operations']
-        for expected_key in expected_keys:
-            if  expected_key not in self._config_dict:
-                raise KeyError("Can not find '%s' in '%s' section of configuration" %
-                               (expected_key, self._config_key))
-        # Check for required fields in data_sources
-        for data_source in self._config_dict['data_sources']:
-            for expected_key in ['source', 'open_dataset']:
-                if expected_key not in self._config_dict['data_sources'][data_source]:
-                    raise KeyError("Can not find '%s' in '%s' section of data_sources" %
-                                   (expected_key, data_source))
-        self.logger.info("Contents of %s contain all necessary data", self._config_key)
-
-    def _open_datasets(self, is_climo):
-        pass
+        # (4) Set up objects for plotting
+        self.fig = dict()
+        self.axs = dict()

@@ -1,0 +1,43 @@
+global_config:
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_for_klindsay/plots
+   plot_format: 'png'
+   levels: [0]
+
+# Collections
+data_sources: # Where are we getting data from?
+   obs.yml:
+      - WOA2013
+   datasets.yml:
+      # Can not contain same key as obs.yml!
+      - PI_control
+      - FV2
+
+variable_definitions: variables.yml
+
+analysis:
+   3d_ann_climo_maps_on_levels:
+      _settings:
+         grid: POP_gx1v7 # grid on which to conduct the analysis
+         plot_diff_from_reference: True
+         # Below are default variables (in code) for 3d_ann_climo_maps_on_levels
+         # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
+      PI_vs_FV2:
+         datestrs: # Queries into collections
+            PI_control: 0271-0300
+            FV2: 0271-0300
+         reference:
+            PI_control: 0271-0300
+      WOA_vs_PI_vs_FV2:
+         datestrs:
+            WOA2013: None
+            PI_control: 0271-0300
+            FV2: 0271-0300
+         reference:
+            WOA2013: None
+   # plot_regional_time_series: # Will require tseries or tslice in data_source
+   #    dim_requirements: # move into analysis_ops.py
+   #       - "nlat:mean"
+   #       - "nlon:mean"
+   #    sources:
+   #       - PI_control
+   #       - FV2

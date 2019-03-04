@@ -1,1 +1,1 @@
-from .analysis_elements_class import AnalysisElements
+from .analysis_class import AnalysisElement

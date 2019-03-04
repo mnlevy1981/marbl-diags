@@ -1,0 +1,21 @@
+global_config:
+   dirout: /glade/scratch/mlevy/BGC_diag_plots_CORE_JRA/plots
+
+data_sources:
+   datasets.yml:
+      - JRA
+      - CORE
+
+variable_definitions: variables.yml
+
+analysis:
+   3d_ann_climo_maps_on_levels:
+      _settings:
+         grid: POP_gx1v7
+         plot_diff_from_reference: True
+         levels: [0]
+      JRA_vs_CORE:
+         datestrs:
+            JRA: 0033-0052
+            CORE: [0043-0062, 0291-0310]
+         reference: {JRA: 0033-0052}

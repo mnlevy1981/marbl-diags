@@ -7,6 +7,8 @@ import json
 import xarray as xr
 from .generic_classes import GenericDataSource
 
+######################################################################
+
 class CachedClimoData(GenericDataSource):
     """ Class built around reading previously-cached data """
     def __init__(self, data_root, var_dict_in, data_type, **kwargs):
@@ -15,7 +17,7 @@ class CachedClimoData(GenericDataSource):
         self._get_dataset(data_root, data_type)
 
     def _get_dataset(self, data_root, data_type):
-        self.logger.info('calling _get_dataset, data_type = %s', data_type)
+        self.logger.debug('calling _get_dataset, data_type = %s', data_type)
         self._is_ann_climo = False
         self._is_mon_climo = True
         if data_type == 'zarr':
@@ -25,7 +27,7 @@ class CachedClimoData(GenericDataSource):
         if not os.path.exists(self._var_dict_in):
             raise FileNotFoundError('Can not find %s' % self._var_dict_in)
 
-        self.logger.info('Getting cached variable dictionary from %s', self._var_dict_in)
+        self.logger.debug('Getting cached variable dictionary from %s', self._var_dict_in)
         with open(self._var_dict_in) as file_in:
             self._var_dict = json.load(file_in)
         del self._var_dict_in
@@ -34,15 +36,38 @@ class CachedClimoData(GenericDataSource):
         """ Cached data should already be climatology """
         pass
 
+######################################################################
+
 class CESMData(GenericDataSource):
     """ Class built around reading CESM history files """
-    def __init__(self, **kwargs):
+    def __init__(self, variables, operation, datestr_in, **kwargs):
         super(CESMData, self).__init__(child_class='CESMData', **kwargs)
-        self._get_dataset(**kwargs['open_dataset'])
+        gdargs = dict()
+        gdargs['variables'] = variables
+        # Set filetype depending on requested operation
+        if operation == "ann_climo":
+            if "ann_climo" in kwargs['dataset_format']:
+                gdargs['filetype'] = 'ann_climo'
+            elif "mon_climo" in kwargs['dataset_format']:
+                gdargs['filetype'] = 'mon_climo'
+            elif "single_variable" in kwargs['dataset_format']:
+                gdargs['filetype'] = 'single_variable'
+            else:
+                raise ValueError("Can not find appropriate filetype for %s", operation)
+        else:
+            raise ValueError("'%s' is an unknown operation", operation)
+        for key in kwargs['dataset_format'][gdargs['filetype']]:
+            gdargs[key] = kwargs['dataset_format'][gdargs['filetype']][key]
+        gdargs['case'] = kwargs['case']
+        gdargs['datestr'] = datestr_in
+        self._get_dataset(**gdargs)
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
-            self.ds.z_t.values = self.ds.z_t.values * 1e-2
+            self.ds['z_t'].values = self.ds['z_t'].values * 1e-2
+        if 'Fe' in self.ds:
+            self.ds['Fe'].values = self.ds['Fe'].values * 1e6
+            #self.ds.Fe.attrs.units = 'pM'
 
     def compute_mon_climatology(self):
         """ Compute monthly climatology (if necessary) """
@@ -50,7 +75,7 @@ class CESMData(GenericDataSource):
             return
         super(CESMData, self).compute_mon_climatology()
 
-    def _get_dataset(self, filetype, dirin, case, stream, datestr):
+    def _get_dataset(self, filetype, dirin, case, stream, datestr, variables):
         """ docstring """
         xr_open_ds = {'decode_coords' : False, 'decode_times' : False, 'data_vars' : 'minimal'}
         if isinstance(datestr, str):
@@ -65,9 +90,9 @@ class CESMData(GenericDataSource):
                 file_name_pattern.append('{}/{}.{}.{}.nc'.format(dirin, case, stream, date_str))
             self._list_files(file_name_pattern)
 
-            self.logger.info('Opening %d files: ', len(self._files))
+            self.logger.debug('Opening %d files: ', len(self._files))
             for n, file_name in enumerate(self._files): # pylint: disable=invalid-name
-                self.logger.info('%d: %s', n+1, file_name)
+                self.logger.debug('%d: %s', n+1, file_name)
 
             self.ds = xr.open_mfdataset(self._files, **xr_open_ds)
 
@@ -103,9 +128,9 @@ class CESMData(GenericDataSource):
                 file_name_pattern.append('{}/{}.{}.nc'.format(dirin, stream, date_str))
             self._list_files(file_name_pattern)
 
-            self.logger.info('Opening %d files: ', len(self._files))
+            self.logger.debug('Opening %d files: ', len(self._files))
             for n, file_name in enumerate(self._files): # pylint: disable=invalid-name
-                self.logger.info('%d: %s', n+1, file_name)
+                self.logger.debug('%d: %s', n+1, file_name)
 
             self.ds = xr.open_mfdataset(self._files, **xr_open_ds)
 
@@ -133,16 +158,16 @@ class CESMData(GenericDataSource):
             self._is_ann_climo = False
             self._is_mon_climo = False
             self.ds = xr.Dataset()
-            for variable in self._var_dict.values():
+            for variable in variables:
                 file_name_pattern = []
                 for date_str in datestr:
                     file_name_pattern.append('{}/{}.{}.{}.{}.nc'.format(
-                        dirin, case, stream, variable, date_str))
+                        dirin, case, stream, self._var_dict[variable], date_str))
                 self._list_files(file_name_pattern)
                 self.ds = xr.merge((self.ds, xr.open_mfdataset(self._files, **xr_open_ds)))
 
         else:
-            raise ValueError('Uknown format: %s' % filetype)
+            raise ValueError('Unknown format: %s' % filetype)
 
         # should this method handle making the 'time' variable functional?
         # (i.e., take mean of time_bound, convert to date object)
@@ -163,13 +188,25 @@ class CESMData(GenericDataSource):
         self._var_dict['phosphate'] = 'PO4'
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
+        self._var_dict['dic'] = 'DIC'
+        self._var_dict['alkalinity'] = 'ALK'
+        self._var_dict['iron'] = 'Fe'
+
+######################################################################
 
 class WOAData(GenericDataSource):
     """ Class built around reading World Ocean Atlas 2013 reanalysis """
     def __init__(self, var_dict, **kwargs):
         super(WOAData, self).__init__(child_class='WOAData', **kwargs)
         self._set_woa_names()
-        self._get_dataset(var_dict, **kwargs['open_dataset'])
+        gdargs = dict()
+        gdargs['freq'] = 'ann'
+        climo_type = '{}_climo'.format(gdargs['freq'])
+        gdargs['grid'] = kwargs['grid']
+        gdargs['dirin'] = kwargs[climo_type]['dirin']
+        if 'filename' in kwargs[climo_type]:
+            gdargs['filename'] = kwargs[climo_type]['filename']
+        self._get_dataset(var_dict, **gdargs)
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?
         if 'z_t' in self.ds:
@@ -185,6 +222,8 @@ class WOAData(GenericDataSource):
         self._woa_names['phosphate'] = 'p'
         self._woa_names['oxygen'] = 'o'
         self._woa_names['silicate'] = 'i'
+        # self._woa_names['dic'] = 'none'
+        # self._woa_names['alkalinity'] = 'none'
 
     def _set_var_dict(self):
         self._var_dict = dict()
@@ -192,16 +231,19 @@ class WOAData(GenericDataSource):
         self._var_dict['phosphate'] = 'PO4'
         self._var_dict['oxygen'] = 'O2'
         self._var_dict['silicate'] = 'SiO3'
+        # self._var_dict['dic'] = 'DIC'
+        # self._var_dict['alkalinity'] = 'ALK'
 
     def _get_dataset(self, var_dict, dirin, freq='ann', grid='1x1d', filename=None):
         """ docstring """
         mlperl_2_mmolm3 = 1.e6 / 1.e3 / 22.3916
         long_names = {'NO3':'Nitrate', 'O2':'Oxygen', 'O2sat':'Oxygen saturation', 'AOU':'AOU',
-                      'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature'}
+                      'SiO3':'Silicic acid', 'PO4':'Phosphate', 'S':'Salinity', 'T':'Temperature',
+                      'DIC':'Dissolved Inorganic Carbon', 'ALK' : 'Alkalinity'}
 
         if filename:
             self._files = os.path.join(dirin, filename)
-            self.logger.info("Reading {}".format(self._files))
+            self.logger.debug("Reading {}".format(self._files))
             self.ds = xr.open_dataset(self._files, decode_times=False)
             self.ds.rename({'depth': 'z_t'}, inplace=True)
         else:
@@ -217,10 +259,10 @@ class WOAData(GenericDataSource):
 
                 dsi = dsi.drop([k for k in dsi.variables if '{}_'.format(v) in k])
 
-                if varname in ['O2', 'AOU', 'O2sat']:
-                    dsi[varname] = dsi[varname] * mlperl_2_mmolm3
-                    dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
-
+                # if varname in ['O2', 'AOU', 'O2sat']:
+                #     dsi[varname] = dsi[varname] * mlperl_2_mmolm3
+                #     dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
+                # 
                 if dsi[varname].attrs['units'] == 'micromoles_per_liter':
                     dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
                 dsi[varname].attrs['long_name'] = long_names[varname]
@@ -262,6 +304,7 @@ class WOAData(GenericDataSource):
         """ WOA2013 data should already be climatology """
         pass
 
+######################################################################
 
 def woa_time_freq(freq):
     """ docstring """
