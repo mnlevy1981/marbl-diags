@@ -200,9 +200,12 @@ class WOAData(GenericDataSource):
         super(WOAData, self).__init__(child_class='WOAData', **kwargs)
         self._set_woa_names()
         gdargs = dict()
-        gdargs['grid'] = kwargs['grid']
         gdargs['freq'] = 'ann'
-        gdargs['dirin'] = kwargs["{}_climo".format(gdargs['freq'])]['dirin']
+        climo_type = '{}_climo'.format(gdargs['freq'])
+        gdargs['grid'] = kwargs['grid']
+        gdargs['dirin'] = kwargs[climo_type]['dirin']
+        if 'filename' in kwargs[climo_type]:
+            gdargs['filename'] = kwargs[climo_type]['filename']
         self._get_dataset(var_dict, **gdargs)
         #-- do unit conversions belong here?
         # maybe there should be a "conform_data_sources" method?

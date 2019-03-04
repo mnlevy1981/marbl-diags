@@ -1,35 +1,28 @@
-CESM2.1_PI-WOA2005-ann-comparison:
-   short_name: woa2005-comp
-   description: Comparing the CESM 2.1 preindustrial control to WOA2005
+global_config:
    dirout: /glade/scratch/mlevy/marbl-diag-out/plots
-   cache_dir: /glade/scratch/mlevy/marbl-diag-out/cached_data
-   source: ocean_diagnostics
-   grid: POP_gx1v7 # grid on which to conduct the analysis
    plot_format: 'png'
-   stats_in_title: True
-   operations:
-      - plot_ann_climo
-   variable_list:
-      - nitrate
-   depth_list:
-      - 0.
-      - 2500.
-      - 4000.
-   reference: WOA2005
-   cache_data: True
-   data_sources:
-      b.e21.BW1850.f09_g17.CMIP6-piControl.001.ann_climatology:
-         source: cesm
-         open_dataset:
-            filetype: ann_climo
-            dirin: /glade/scratch/mlevy/IOMB-scratch/b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology/ocn/proc/climo
-            case: b.e21.BW1850.f09_g17.CMIP6-piControl.001.climatology
-            stream: tavg
-            datestr: 0317-0326
-      WOA2005:
-         source: woa2005
-         open_dataset:
-            dirin: /glade/p/cesm/bgcwg/obgc_diag/data/obs_data/WOA2005
-            filename: WOA05_ann_avg_gx1v6.nc
-            freq: ann
-            grid: POP_gx1v7
+   levels: [0, 2500, 4000]
+
+# Collections
+data_sources: # Where are we getting data from?
+   obs.yml:
+      - WOA2005
+   datasets.yml:
+      # Can not contain same key as obs.yml!
+      - PI_control
+
+variable_definitions: variables.yml
+
+analysis:
+   3d_ann_climo_maps_on_levels:
+      _settings:
+         grid: POP_gx1v7 # grid on which to conduct the analysis
+         plot_diff_from_reference: True
+         # Below are default variables (in code) for 3d_ann_climo_maps_on_levels
+         # variables: [nitrate, phosphate, oxygen, silicate, dic, alkalinity, iron]
+      woa2005-comp:
+         datestrs: # Queries into collections
+            WOA2005: None
+            PI_control: 0317-0326
+         reference:
+            WOA2005: None

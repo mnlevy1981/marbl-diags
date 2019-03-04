@@ -35,7 +35,9 @@ PI_control: # POP history files from CESM 2.1 control run
    source: cesm
    grid: POP_gx1v7
    case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-   datestr: 0271-0300
+   datestr:
+      - 0271-0300
+      - 0317-0326
    dataset_format:
       ann_climo:
          dirin: /glade/work/mlevy/CESM_2.1_BGC_tavg

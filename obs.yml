@@ -1,3 +1,10 @@
+WOA2005:
+   source: woa2005
+   grid: POP_gx1v7
+   datestrs: None
+   ann_climo:
+      dirin: /glade/p/cesm/bgcwg/obgc_diag/data/obs_data/WOA2005
+      filename: WOA05_ann_avg_gx1v6.nc
 WOA2013:
    source: woa2013
    grid: POP_gx1v7
