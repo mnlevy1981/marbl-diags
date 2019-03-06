@@ -259,18 +259,22 @@ class WOAData(GenericDataSource):
 
                 dsi = dsi.drop([k for k in dsi.variables if '{}_'.format(v) in k])
 
-                # if varname in ['O2', 'AOU', 'O2sat']:
-                #     dsi[varname] = dsi[varname] * mlperl_2_mmolm3
-                #     dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
-                # 
-                if dsi[varname].attrs['units'] == 'micromoles_per_liter':
-                    dsi[varname].attrs['units'] = 'mmol m$^{-3}$'
-                dsi[varname].attrs['long_name'] = long_names[varname]
-
                 if self.ds.variables:
                     self.ds = xr.merge((self.ds, dsi))
                 else:
                     self.ds = dsi
+
+        # Unit conversion (ml/L -> mmol/m3); also shorten micromoles_per_liter
+        for varname in self.ds:
+            if 'units' in self.ds[varname].attrs:
+                if self.ds[varname].attrs['units'] == 'ml l-1':
+                    self.ds[varname].values = self.ds[varname].values * mlperl_2_mmolm3
+                    self.ds[varname].attrs['units'] = 'mmol m$^{-3}$'
+
+                if self.ds[varname].attrs['units'] == 'micromoles_per_liter':
+                    self.ds[varname].attrs['units'] = 'mmol m$^{-3}$'
+            if varname in long_names:
+                self.ds[varname].attrs['long_name'] = long_names[varname]
 
         if freq == 'ann':
             self._is_ann_climo = True

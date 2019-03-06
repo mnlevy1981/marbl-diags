@@ -29,7 +29,7 @@ nitrate:
          - 34
          - 38
          - 42
-      bias_levels:
+      difference_plot_levels:
          - -5
          - -4
          - -3
@@ -78,7 +78,7 @@ phosphate:
          - 2.4
          - 2.8
          - 3.2
-      bias_levels:
+      difference_plot_levels:
          - -0.8
          - -0.6
          - -0.4
@@ -107,7 +107,7 @@ oxygen:
          - 320
          - 350
          - 380
-      bias_levels:
+      difference_plot_levels:
          - -80
          - -60
          - -40
@@ -152,7 +152,7 @@ silicate:
          - 140
          - 160
          - 180
-      bias_levels:
+      difference_plot_levels:
          - -50
          - -40
          - -30
@@ -184,7 +184,7 @@ dic:
          - 2250
          - 2300
          - 2350
-      bias_levels:
+      difference_plot_levels:
          - -200
          - -150
          - -100
@@ -213,7 +213,7 @@ alkalinity:
          - 2450
          - 2500
          - 2550
-      bias_levels:
+      difference_plot_levels:
          - -80
          - -60
          - -40
@@ -244,7 +244,7 @@ iron:
          - 5250
          - 9880
          - 18600
-      bias_levels:
+      difference_plot_levels:
          - -500
          - -100
          - -50
