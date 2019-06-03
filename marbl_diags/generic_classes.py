@@ -27,7 +27,7 @@ class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     def compute_mon_climatology(self):
         """ Compute a monthly climatology """
 
-        ds = esmlab.climatology.compute_mon_climatology(self.ds)
+        ds = esmlab.core.climatology(self.ds, freq='mon')
         self.ds = ds
 
     def cache_dataset(self, cached_location, cached_var_dict):
