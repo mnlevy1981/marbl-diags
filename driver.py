@@ -32,7 +32,7 @@ if __name__ == "__main__":
     logging.basicConfig(format='%(levelname)s (%(funcName)s): %(message)s', level=log_level)
 
     with open(args.input_file) as file_in:
-        full_input = yaml.load(file_in)
+        full_input = yaml.load(file_in, Loader=yaml.FullLoader)
     # Check for correct keys
     err_found = False
     for key in ['global_config', 'data_sources', 'variable_definitions', 'analysis']:
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     ds_dict = dict()
     for ds_file in full_input['data_sources']:
         with open(ds_file) as file_in:
-            ds_dict_in = yaml.load(file_in)
+            ds_dict_in = yaml.load(file_in, Loader=yaml.FullLoader)
             for ds_name in full_input['data_sources'][ds_file]:
                 if ds_name not in ds_dict_in:
                     raise KeyError("Can not find {} in {}".format(ds_name, ds_file))
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # Create dictionary of variables from requested files
     with open(full_input['variable_definitions']) as file_in:
-        var_dict = yaml.load(file_in)
+        var_dict = yaml.load(file_in, Loader=yaml.FullLoader)
 
     AnalysisCategories = dict()
     for category_name, analysis_dict in full_input['analysis'].items():
