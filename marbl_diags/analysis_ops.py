@@ -1,16 +1,17 @@
 """
 Functions that can be called from analysis elements"""
 
+# pylint: disable=wrong-import-position,invalid-name,line-too-long
+
 import os
 from subprocess import call
 import numpy as np
+import cartopy.crs as ccrs
+import esmlab
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-import cartopy
-import cartopy.crs as ccrs
-import esmlab
 from . import plottools as pt
 
 def plot_ann_climo(AnalysisElement):
@@ -36,30 +37,30 @@ def plot_mon_climo(AnalysisElement):
             raise ValueError("Dataset '{}' must have time dimension of 12".format(ds_name))
         # 2. set up averages to reflect proper dimensions
         valid_time_dims[ds_name] = dict()
-        valid_time_dims[ds_name]['ANN'] = range(0,12)
+        valid_time_dims[ds_name]['ANN'] = range(0, 12)
         valid_time_dims[ds_name]['DJF'] = [11, 0, 1]
-        valid_time_dims[ds_name]['MAM'] = range(2,5)
-        valid_time_dims[ds_name]['JJA'] = range(5,8)
-        valid_time_dims[ds_name]['SON'] = range(8,11)
+        valid_time_dims[ds_name]['MAM'] = range(2, 5)
+        valid_time_dims[ds_name]['JJA'] = range(5, 8)
+        valid_time_dims[ds_name]['SON'] = range(8, 11)
     _plot_climo(AnalysisElement, valid_time_dims)
 
 def _plot_climo(AnalysisElement, valid_time_dims):
     """ Regardless of data source, generate plots """
     # look up grid (move to known grids database)
-    if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
+    if AnalysisElement.get_config('grid') == 'POP_gx1v7':
         # and is tracer....
         depth_coord_name = 'z_t'
     else:
         raise ValueError('unknown grid')
 
     # where will plots be written?
-    if not os.path.exists(AnalysisElement._global_config['dirout']):
-        call(['mkdir', '-p', AnalysisElement._global_config['dirout']])
+    if not os.path.exists(AnalysisElement.get_config('dirout')):
+        call(['mkdir', '-p', AnalysisElement.get_config('dirout')])
 
     # identify reference (if any provided)
     ref_data_source_name = None
-    if AnalysisElement._global_config['reference']:
-        for source, datestr in AnalysisElement._global_config['reference'].items():
+    if AnalysisElement.get_config('reference'):
+        for source, datestr in AnalysisElement.get_config('reference').items():
             ref_data_source_name = "{}.{}".format(source, datestr)
         if ref_data_source_name in AnalysisElement.data_sources:
             AnalysisElement.logger.info("Reference dataset: '%s'", ref_data_source_name)
@@ -74,23 +75,23 @@ def _plot_climo(AnalysisElement, valid_time_dims):
     if ref_data_source_name:
         data_source_name_list = [ref_data_source_name] + \
                                 [data_source_name for data_source_name in data_source_name_list
-                                    if data_source_name != ref_data_source_name]
-        if AnalysisElement._global_config['plot_diff_from_reference']:
+                                 if data_source_name != ref_data_source_name]
+        if AnalysisElement.get_config('plot_diff_from_reference'):
             plt_count = 2*plt_count - 1
             diff_field = dict()
 
     #-- loop over variables
-    for v in AnalysisElement._global_config['variables']:
+    for v in AnalysisElement.get_config('variables'):
 
         nrow, ncol = pt.get_plot_dims(plt_count)
         AnalysisElement.logger.debug('dimensioning plot canvas: %d x %d (%d total plots)',
-                         nrow, ncol, plt_count)
+                                     nrow, ncol, plt_count)
         var_in_ref = True
 
         #-- loop over time periods
-        for time_period in AnalysisElement._global_config['climo_time_periods']:
+        for time_period in AnalysisElement.get_config('climo_time_periods'):
 
-            for sel_z in AnalysisElement._global_config['levels']:
+            for sel_z in AnalysisElement.get_config('levels'):
 
                 #-- build indexer for depth
                 if isinstance(sel_z, list): # fragile?
@@ -110,7 +111,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                 AnalysisElement.logger.info('generating plot: %s', plot_name)
 
                 #-- generate figure object
-                AnalysisElement.fig[plot_name] = plt.figure(figsize=(ncol*6,nrow*4))
+                AnalysisElement.fig[plot_name] = plt.figure(figsize=(ncol*6, nrow*4))
                 AnalysisElement.axs[plot_name] = np.empty(ncol*nrow, dtype=type(None))
                 AnalysisElement.fig[plot_name].suptitle("{} at {}".format(v, depth_str))
 
@@ -122,12 +123,12 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                     #-- need to deal with time dimension here....
 
                     # Find appropriate variable name in dataset or move to next dataset
-                    if v not in AnalysisElement.data_sources[ds_name]._var_dict:
+                    if not AnalysisElement.data_sources[ds_name].is_var(v):
                         AnalysisElement.logger.info('Can not find %s in %s, skipping plot', v, ds_name)
                         if ds_name == ref_data_source_name:
                             var_in_ref = False
                         continue
-                    var_name = AnalysisElement.data_sources[ds_name]._var_dict[v]
+                    var_name = AnalysisElement.data_sources[ds_name].get_var(v)
                     if var_name not in ds:
                         AnalysisElement.logger.info('Can not find %s in %s, skipping plot', var_name, ds_name)
                         if ds_name == ref_data_source_name:
@@ -141,7 +142,8 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                     else:
                         raise KeyError("'{}' is not a known time period for '{}'".format(time_period, ds_name))
 
-                    plot_diff_from_reference = ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']
+                    plot_diff_from_reference = (AnalysisElement.get_config('plot_diff_from_reference') and
+                                                ref_data_source_name)
 
                     if is_depth_range:
                         field = field.mean(depth_coord_name)
@@ -154,24 +156,24 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                             diff_field_for_stats.values = field.values - ref_field_for_stats.values
 
                     ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
-                    AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._global_config['stats_in_title'])
+                    AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement.get_config('stats_in_title'))
                     AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
 
-                    if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
+                    if AnalysisElement.get_config('grid') == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
 
                     if ds_name == ref_data_source_name and plot_diff_from_reference:
                         ref_field = field
 
-                    levels = AnalysisElement._var_dict[v]['contours']['levels']
-                    cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
+                    levels = AnalysisElement.get_var(v)['contours']['levels']
+                    cf = AnalysisElement.axs[plot_name][i].contourf(lon, lat, field, transform=ccrs.PlateCarree(),
                                                                     levels=levels,
-                                                                    extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                                                    cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
+                                                                    extend=AnalysisElement.get_var(v)['contours']['extend'],
+                                                                    cmap=AnalysisElement.get_var(v)['contours']['cmap'],
                                                                     norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
                     cs = AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
-                                                                   levels=AnalysisElement._var_dict[v]['contours']['levels'],
-                                                                   extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                   levels=AnalysisElement.get_var(v)['contours']['levels'],
+                                                                   extend=AnalysisElement.get_var(v)['contours']['extend'],
                                                                    linewidths=0.5, colors='k')
 
                     if plot_diff_from_reference:
@@ -179,44 +181,51 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                         if ds_name != ref_data_source_name and var_in_ref:
                             diff_field[ds_name] = field - ref_field
                             j = i + len(data_source_name_list) - 1
-                            ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1,
-                                projection=ccrs.Robinson(central_longitude=305.0))
+                            ax = AnalysisElement.fig[plot_name].add_subplot(nrow,
+                                                                            ncol,
+                                                                            j+1,
+                                                                            projection=ccrs.Robinson(central_longitude=305.0))
                             AnalysisElement.axs[plot_name][j] = _gen_plot_panel(
                                 ax, "{} - {}".format(ds_name, ref_data_source_name),
                                 diff_field_for_stats, ds['TAREA'],
-                                AnalysisElement._global_config['stats_in_title'])
+                                AnalysisElement.get_config('stats_in_title'))
                             AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
 
-                            levels = AnalysisElement._var_dict[v]['contours']['difference_plot_levels']
-                            cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,diff_field[ds_name],transform=ccrs.PlateCarree(),
+                            levels = AnalysisElement.get_var(v)['contours']['difference_plot_levels']
+                            cf = AnalysisElement.axs[plot_name][j].contourf(lon,
+                                                                            lat,
+                                                                            diff_field[ds_name],
+                                                                            transform=ccrs.PlateCarree(),
                                                                             levels=levels,
-                                                                            extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                            extend=AnalysisElement.get_var(v)['contours']['extend'],
                                                                             norm=colors.BoundaryNorm(boundaries=levels, ncolors=256),
                                                                             cmap='bwr')
                             cs = AnalysisElement.axs[plot_name][j].contour(cf, transform=ccrs.PlateCarree(),
                                                                            levels=levels,
-                                                                           extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                                           extend=AnalysisElement.get_var(v)['contours']['extend'],
                                                                            linewidths=0.5, colors='k')
                             AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][j])
-                    del(field)
+                    del field
 
                 AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
-                if not (ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']):
+                if not (ref_data_source_name and AnalysisElement.get_config('plot_diff_from_reference')):
                     cax = plt.axes((0.93, 0.15, 0.02, 0.7))
                     AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
 
-                if AnalysisElement._global_config['plot_format']:
-                    AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement._global_config['dirout'],
-                                                  plot_name,
-                                                  AnalysisElement._global_config['plot_format']),
-                                bbox_inches='tight', dpi=300, format=AnalysisElement._global_config['plot_format'])
+                if AnalysisElement.get_config('plot_format'):
+                    AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement.get_config('dirout'),
+                                                                             plot_name,
+                                                                             AnalysisElement.get_config('plot_format')),
+                                                           bbox_inches='tight',
+                                                           dpi=300,
+                                                           format=AnalysisElement.get_config('plot_format'))
                 plt.close(AnalysisElement.fig[plot_name])
-                if not AnalysisElement._global_config['keep_figs']:
-                    del(AnalysisElement.fig[plot_name])
-                    (AnalysisElement.axs[plot_name])
-    if not AnalysisElement._global_config['keep_figs']:
-        del(AnalysisElement.fig)
-        (AnalysisElement.axs)
+                if not AnalysisElement.get_config('keep_figs'):
+                    del AnalysisElement.fig[plot_name]
+                    del AnalysisElement.axs[plot_name]
+    if not AnalysisElement.get_config('keep_figs'):
+        del AnalysisElement.fig
+        del AnalysisElement.axs
 
 def _compute_stats(field, TAREA):
     fmin = np.nanmin(field)

@@ -24,6 +24,12 @@ class GenericDataSource(object): # pylint: disable=useless-object-inheritance
     # PUBLIC ROUTINES #
     ###################
 
+    def is_var(self, var_name):
+        return var_name in self._var_dict
+
+    def get_var(self, var_name):
+        return self._var_dict[var_name]
+
     def compute_mon_climatology(self):
         """ Compute a monthly climatology """
 
@@ -151,3 +157,9 @@ class GenericAnalysisElement(object):
         # (4) Set up objects for plotting
         self.fig = dict()
         self.axs = dict()
+
+    def get_config(self, key):
+        return self._global_config[key]
+
+    def get_var(self, var_name):
+        return self._var_dict[var_name]
