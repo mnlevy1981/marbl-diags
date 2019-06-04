@@ -68,7 +68,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
     if not ref_data_source_name:
         AnalysisElement.logger.info("No reference dataset specified")
 
-    #-- loop over datasets
+    # Set up list of data sources for loop
     data_source_name_list = AnalysisElement.data_sources.keys()
     plt_count = len(data_source_name_list)
     if ref_data_source_name:
@@ -114,7 +114,8 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                 AnalysisElement.axs[plot_name] = np.empty(ncol*nrow, dtype=type(None))
                 AnalysisElement.fig[plot_name].suptitle("{} at {}".format(v, depth_str))
 
-                # Plot climo state (don't use enumerate to avoid incrementing missing datasets)
+                #-- loop over datasets
+                # (don't use enumerate to avoid incrementing missing datasets)
                 i = -1
                 for ds_name in data_source_name_list:
 
@@ -157,6 +158,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                     AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._global_config['stats_in_title'])
                     AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
 
+                    # This is a fancy plot, want a way to trigger quick plot
                     if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
                         lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
 
@@ -169,10 +171,10 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                                     extend=AnalysisElement._var_dict[v]['contours']['extend'],
                                                                     cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
                                                                     norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
-                    cs = AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
-                                                                   levels=AnalysisElement._var_dict[v]['contours']['levels'],
-                                                                   extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                                                   linewidths=0.5, colors='k')
+                    AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
+                                                              levels=AnalysisElement._var_dict[v]['contours']['levels'],
+                                                              extend=AnalysisElement._var_dict[v]['contours']['extend'],
+                                                              linewidths=0.5, colors='k')
 
                     if plot_diff_from_reference:
                         AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
