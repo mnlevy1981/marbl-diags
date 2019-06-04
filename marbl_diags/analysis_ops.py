@@ -171,7 +171,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                                     extend=AnalysisElement.get_var(v)['contours']['extend'],
                                                                     cmap=AnalysisElement.get_var(v)['contours']['cmap'],
                                                                     norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
-                    cs = AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
+                    cs = AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(), # pylint: disable=unused-variable
                                                                    levels=AnalysisElement.get_var(v)['contours']['levels'],
                                                                    extend=AnalysisElement.get_var(v)['contours']['extend'],
                                                                    linewidths=0.5, colors='k')
