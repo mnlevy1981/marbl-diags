@@ -107,7 +107,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                            time_period)
                 AnalysisElement.logger.info('generating plot: %s', plot_name)
 
-                _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period, data_source_name_list, ref_data_source_name, valid_time_dims, is_depth_range, indexer)
+                cf = _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period, data_source_name_list, ref_data_source_name, valid_time_dims, is_depth_range, indexer, depth_coord_name)
 
                 AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
                 if not (ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']):
@@ -148,7 +148,7 @@ def _gen_plot_panel(ax, title_str, field, TAREA, stats_in_title):
     ax.set_ylabel('')
     return ax
 
-def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period, data_source_name_list, ref_data_source_name, valid_time_dims, is_depth_range, indexer):
+def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period, data_source_name_list, ref_data_source_name, valid_time_dims, is_depth_range, indexer, depth_coord_name):
 
     var_in_ref = True
 
@@ -161,7 +161,6 @@ def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period
     # (don't use enumerate to avoid incrementing missing datasets)
     i = -1
     for ds_name in data_source_name_list:
-
         ds = AnalysisElement.data_sources[ds_name].ds
         #-- need to deal with time dimension here....
 
@@ -191,6 +190,7 @@ def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period
         if is_depth_range:
             field = field.mean(depth_coord_name)
 
+        diff_field_for_stats = None
         if plot_diff_from_reference:
             diff_field = dict()
             if ds_name == ref_data_source_name:
@@ -198,53 +198,56 @@ def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period
             else:
                 diff_field_for_stats = field.copy(deep=True)
                 diff_field_for_stats.values = field.values - ref_field_for_stats.values
+        else:
+            ref_field = None
 
         ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, i+1, projection=ccrs.Robinson(central_longitude=305.0))
         AnalysisElement.axs[plot_name][i] = _gen_plot_panel(ax, ds_name, field, ds['TAREA'], AnalysisElement._global_config['stats_in_title'])
         AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][i].get_title()))
 
-        # This is a fancy plot, want a way to trigger quick plot
-        if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
-            lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
-
         if ds_name == ref_data_source_name and plot_diff_from_reference:
             ref_field = field
 
-        levels = AnalysisElement._var_dict[v]['contours']['levels']
-        cf = AnalysisElement.axs[plot_name][i].contourf(lon,lat,field,transform=ccrs.PlateCarree(),
-                                                        levels=levels,
-                                                        extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                                        cmap=AnalysisElement._var_dict[v]['contours']['cmap'],
-                                                        norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
-        AnalysisElement.axs[plot_name][i].contour(cf, transform=ccrs.PlateCarree(),
-                                                  levels=AnalysisElement._var_dict[v]['contours']['levels'],
-                                                  extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                                  linewidths=0.5, colors='k')
+        j = i + len(data_source_name_list) - 1
+        cf = _gen_fancy_plots(i, j, nrow, ncol, v, AnalysisElement, ds, field, ref_field, ds_name, plot_name, ref_data_source_name, diff_field_for_stats)
 
-        if plot_diff_from_reference:
-            AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
-            if ds_name != ref_data_source_name and var_in_ref:
-                diff_field[ds_name] = field - ref_field
-                j = i + len(data_source_name_list) - 1
-                ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1,
-                    projection=ccrs.Robinson(central_longitude=305.0))
-                AnalysisElement.axs[plot_name][j] = _gen_plot_panel(
-                    ax, "{} - {}".format(ds_name, ref_data_source_name),
-                    diff_field_for_stats, ds['TAREA'],
-                    AnalysisElement._global_config['stats_in_title'])
-                AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
-
-                levels = AnalysisElement._var_dict[v]['contours']['difference_plot_levels']
-                cf = AnalysisElement.axs[plot_name][j].contourf(lon,lat,diff_field[ds_name],transform=ccrs.PlateCarree(),
-                                                                levels=levels,
-                                                                extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                                                norm=colors.BoundaryNorm(boundaries=levels, ncolors=256),
-                                                                cmap='bwr')
-                cs = AnalysisElement.axs[plot_name][j].contour(cf, transform=ccrs.PlateCarree(),
-                                                               levels=levels,
-                                                               extend=AnalysisElement._var_dict[v]['contours']['extend'],
-                                                               linewidths=0.5, colors='k')
-                AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][j])
         del(field)
         del(diff_field)
+    return(cf)
+
+def _gen_fancy_plots(i, j, nrow, ncol, v, AnalysisElement, ds, field, ref_field, ds_name, plot_name, ref_data_source_name, diff_field_for_stats):
+    if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
+        lon, lat, field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, field)
+
+    levels = AnalysisElement._var_dict[v]['contours']['levels']
+    extend = AnalysisElement._var_dict[v]['contours']['extend']
+    cmap = AnalysisElement._var_dict[v]['contours']['cmap']
+    AnalysisElement.axs[plot_name][i], cf = _gen_fancy_plot(i, AnalysisElement, lon, lat, field, plot_name, levels, extend, cmap)
+
+    if ref_field is not None:
+        AnalysisElement.fig[plot_name].colorbar(cf, ax=AnalysisElement.axs[plot_name][i])
+
+    if diff_field_for_stats is not None:
+        ax = AnalysisElement.fig[plot_name].add_subplot(nrow, ncol, j+1,
+            projection=ccrs.Robinson(central_longitude=305.0))
+        AnalysisElement.axs[plot_name][j] = _gen_plot_panel(
+            ax, "{} - {}".format(ds_name, ref_data_source_name),
+            diff_field_for_stats, ds['TAREA'],
+            AnalysisElement._global_config['stats_in_title'])
+        AnalysisElement.logger.info("Plotting {}".format(AnalysisElement.axs[plot_name][j].get_title()))
+        lon, lat, ref_field = pt.adjust_pop_grid(ds.TLONG.values, ds.TLAT.values, ref_field)
+        levels = AnalysisElement._var_dict[v]['contours']['difference_plot_levels']
+        extend = AnalysisElement._var_dict[v]['contours']['extend']
+        cmap = 'bwr'
+        AnalysisElement.axs[plot_name][j], cf2 = _gen_fancy_plot(j, AnalysisElement, lon, lat, field-ref_field, plot_name, levels, extend, cmap)
+        AnalysisElement.fig[plot_name].colorbar(cf2, ax=AnalysisElement.axs[plot_name][j])
+        return(cf)
+
+def _gen_fancy_plot(i, AnalysisElement, lon, lat, field, plot_name, levels, extend, cmap):
+    # This is a fancy plot, want a way to trigger quick plot
+    ax = AnalysisElement.axs[plot_name][i]
+    cf = ax.contourf(lon,lat,field,transform=ccrs.PlateCarree(), levels=levels, extend=extend, cmap=cmap,
+                     norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
+    ax.contour(cf, transform=ccrs.PlateCarree(), levels=levels, extend=extend, linewidths=0.5, colors='k')
+    return ax, cf
 
