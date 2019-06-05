@@ -107,12 +107,7 @@ def _plot_climo(AnalysisElement, valid_time_dims):
                                                            time_period)
                 AnalysisElement.logger.info('generating plot: %s', plot_name)
 
-                cf = _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period, data_source_name_list, ref_data_source_name, valid_time_dims, is_depth_range, indexer, depth_coord_name)
-
-                AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
-                if not (ref_data_source_name and AnalysisElement._global_config['plot_diff_from_reference']):
-                    cax = plt.axes((0.93, 0.15, 0.02, 0.7))
-                    AnalysisElement.fig[plot_name].colorbar(cf, cax=cax)
+                _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period, data_source_name_list, ref_data_source_name, valid_time_dims, is_depth_range, indexer, depth_coord_name)
 
                 if AnalysisElement._global_config['plot_format']:
                     AnalysisElement.fig[plot_name].savefig('{}/{}.{}'.format(AnalysisElement._global_config['dirout'],
@@ -156,6 +151,7 @@ def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period
     AnalysisElement.fig[plot_name] = plt.figure(figsize=(ncol*6,nrow*4))
     AnalysisElement.axs[plot_name] = np.empty(ncol*nrow, dtype=type(None))
     AnalysisElement.fig[plot_name].suptitle("{} at {}".format(v, depth_str))
+    diff_field_for_stats = None
 
     #-- loop over datasets
     # (don't use enumerate to avoid incrementing missing datasets)
@@ -190,7 +186,6 @@ def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period
         if is_depth_range:
             field = field.mean(depth_coord_name)
 
-        diff_field_for_stats = None
         if plot_diff_from_reference:
             diff_field = dict()
             if ds_name == ref_data_source_name:
@@ -212,8 +207,14 @@ def _gen_plots(AnalysisElement, v, plot_name, depth_str, nrow, ncol, time_period
         cf = _gen_fancy_plots(i, j, nrow, ncol, v, AnalysisElement, ds, field, ref_field, ds_name, plot_name, ref_data_source_name, diff_field_for_stats)
 
         del(field)
-        del(diff_field)
-    return(cf)
+        if plot_diff_from_reference:
+            del(diff_field)
+
+    AnalysisElement.fig[plot_name].subplots_adjust(hspace=0.45, wspace=0.02, right=0.9)
+
+    if diff_field_for_stats is None:
+        cax = plt.axes((0.93, 0.1, 0.02, 0.8))
+        AnalysisElement.fig[plot_name].colorbar(cf, cax=cax, orientation='vertical')
 
 def _gen_fancy_plots(i, j, nrow, ncol, v, AnalysisElement, ds, field, ref_field, ds_name, plot_name, ref_data_source_name, diff_field_for_stats):
     if AnalysisElement._global_config['grid'] == 'POP_gx1v7':
@@ -241,7 +242,8 @@ def _gen_fancy_plots(i, j, nrow, ncol, v, AnalysisElement, ds, field, ref_field,
         cmap = 'bwr'
         AnalysisElement.axs[plot_name][j], cf2 = _gen_fancy_plot(j, AnalysisElement, lon, lat, field-ref_field, plot_name, levels, extend, cmap)
         AnalysisElement.fig[plot_name].colorbar(cf2, ax=AnalysisElement.axs[plot_name][j])
-        return(cf)
+
+    return(cf)
 
 def _gen_fancy_plot(i, AnalysisElement, lon, lat, field, plot_name, levels, extend, cmap):
     # This is a fancy plot, want a way to trigger quick plot
@@ -250,4 +252,3 @@ def _gen_fancy_plot(i, AnalysisElement, lon, lat, field, plot_name, levels, exte
                      norm=colors.BoundaryNorm(boundaries=levels, ncolors=256))
     ax.contour(cf, transform=ccrs.PlateCarree(), levels=levels, extend=extend, linewidths=0.5, colors='k')
     return ax, cf
-
