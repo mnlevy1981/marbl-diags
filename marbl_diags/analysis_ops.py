@@ -125,8 +125,8 @@ def _plot_climo(AnalysisElement, valid_time_dims):
 def _compute_stats(field, TAREA):
     fmin = np.nanmin(field)
     fmax = np.nanmax(field)
-    fmean = esmlab.statistics.weighted_mean(field, dim=field.dims, weights=TAREA).load().values
-    fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, dim=field.dims, weights=TAREA).load().values)
+    fmean = esmlab.statistics.weighted_mean(field, weights=TAREA).load().values
+    fRMS = np.sqrt(esmlab.statistics.weighted_mean(field*field, weights=TAREA).load().values)
     return fmin, fmax, fmean, fRMS
 
 def _gen_plot_panel(ax, title_str, field, TAREA, stats_in_title):
